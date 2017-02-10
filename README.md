@@ -14,10 +14,10 @@ The main reason for creation of this module is to allow decoupling business logi
 ### Architecture
 
 The module is based on pub/sub interface.
-It accumulates events in the backlog for new subscribers.
-It is good and bad:
-    * allows consumers/producer to be added in any order and guarantees delivery of an event.
-    * it accumulates events in memory, thus it cannot be used for long running flows as it eventually will run out of memory. It is good only for short request/stream flows that eventually end and GC-ed.
+It accumulates events in the backlog for new subscribers. This is pros and cons:
+* Allows consumers/producers to be added in any order and guarantees delivery of an event.
+* Accumulates events in memory, thus it cannot be used for long running flows as it eventually will run out of memory.
+* It is good fit for short request/stream flows that eventually end and GC-ed.
 
 ### Install
 
@@ -27,7 +27,7 @@ npm install oja -S
 
 ### Usage
 
-##### Simple pub/sub
+#### Simple pub/sub
 ```js
 const Flow = require('oja').Flow;
 const flow = new Flow();
@@ -44,7 +44,7 @@ const producer = flow.define('foo');
 producer.pub('bar');
 ```
 
-##### Shorter form for clarity:
+#### Shorter form for clarity:
 
 ```js
 // create consumer component
@@ -55,7 +55,7 @@ flow
 .define('foo', 'bar');
 ```
 
-##### Consuming multiple events
+#### Consuming multiple events
 
 ```js
 // create consumer component
@@ -67,7 +67,7 @@ flow
 .define('foo', 'bar1');
 ```
 
-##### Using promise
+#### Using promise
 
 ```js
 // create consumer component
@@ -80,7 +80,7 @@ flow
 }));
 ```
 
-##### Multiple consumers, single producer
+#### Multiple consumers, single producer
 
 ```js
 // create consumer component
@@ -94,7 +94,7 @@ flow
 .define('foo', 'bar');
 ```
 
-##### Chaining actions, mixing, etc.
+#### Chaining actions, mixing, etc.
 
 ```js
 // NOTE: the order of consume/define does not matter
@@ -110,12 +110,12 @@ flow
 })
 // start chain reaction here
 .define('foo', 'faa')   
-// continue consuming
+// lets produce multiple events via event emitter
 .consume('woo', (woo, runtime) => {    
     console.log(woo); // prints waa
-
-    runtime.define('roo', emitter); // can return it and generate multiple events
-    // simulate async flow
+    // define as event emitter
+    runtime.define('roo', emitter);
+    // simulate async flow with two event emitted
     setImmediate(() => {
         // generate multiple events
         emitter.emit('data', 'raa1');
@@ -124,14 +124,17 @@ flow
 
     return emitter;
 })
+// validate
 .consume('roo', roo => {
     console.log(roo);   // prints raa1 and raa2
 })
-.consume(['foo', 'qoo'], input => { // can consume multiple topics
+// consume multiple topics
+.consume(['foo', 'qoo'], input => {
     console.log(input.foo);     // prints faa
     console.log(input.qoo);     // prints qaa
 })
-.consume('foo', (foo, runtime) => { // can consume inside consume
+// can consume inside consume
+.consume('foo', (foo, runtime) => {
     console.log(foo);     // prints faa
     runtime.consume('qoo', qoo => {
         console.log(input.qoo);     // prints qaa
@@ -141,8 +144,8 @@ flow
         console.log(input.qoo);     // prints qaa
     });
 })
+// can generate multiple events using pub
 .define('doo', runtime => {
-    // can generate multiple events using pub
     runtime.pub('daa1');
     runtime.pub('daa2');
     runtime.pub('daa3');
@@ -150,7 +153,7 @@ flow
 .consume('doo', doo => {
     console.log(doo); // prints daa1, daa2, daa3
 });
-// NOTE: we can consume first stream event via promise if you are not interested in the rest
+// NOTE: we can consume first event via promise if we are not interested in the rest
 flow.consume('doo').then(doo => {
     console.log(doo); // prints daa1
 });
@@ -161,7 +164,7 @@ flow.consume('*', evt => {
 })
 ```
 
-##### Join flows together
+#### Join flows together
 
 ```js
 const base = new Flow();
@@ -172,7 +175,7 @@ flow.consume('foo', foo => {
 });
 ```
 
-You can also define make them depend on each other
+You can also make them depend on each other
 
 ```js
 const base = new Flow();
@@ -186,7 +189,7 @@ flow.consume('foo', foo => {
 flow.define('shared', ''); // trigger the chain
 ```
 
-##### Timeouts
+#### Timeouts
 
 The promise chain may be hard to figure out where it is blocked.
 Oja allows to set a timeout for the given topics and upon the timeout would provide an error message listing topics that have not been resolved yet.
@@ -196,14 +199,14 @@ flow
 .consume('foo')
 .consume('bar')
 .consume('too')
-.timeout(['foo', 'bar'])
+.timeout(['foo', 'bar'], 300)   // 300 ms
 .define('bar', 'boo')
 .catch(err => {
     console.log(err.message); // prints "Topic/s (foo) timed out, pending topics (too)"
 });
 ```
 
-##### Querying for the state
+#### Querying for the state
 
 Oja provides a current status of topcis that have not been resolved
 
@@ -217,9 +220,9 @@ flow
 console.log(flow.state()); // prints [foo, too]
 ```
 
-##### Error
+#### Error
 
-###### Throwing error
+##### Throwing error
 
 ```js
 flow.define('error', new Error('Boom'));
@@ -241,7 +244,7 @@ flow.define('data', runtime => {
 });
 ```
 
-###### Catching error
+##### Catching error
 
 ```js
 flow.catch(err => {
@@ -253,7 +256,7 @@ flow.consume('error', err => {
 });
 ```
 
-###### Error stops flow
+##### Error stops flow
 
 The error will prevent further events including error events from publishing.
 
