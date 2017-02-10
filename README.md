@@ -15,6 +15,7 @@ The main reason for creation of this module is to allow decoupling business logi
 
 The module is based on pub/sub interface.
 It accumulates events in the backlog for new subscribers. This is pros and cons:
+
 * Allows consumers/producers to be added in any order and guarantees delivery of an event.
 * Accumulates events in memory, thus it cannot be used for long running flows as it eventually will run out of memory.
 * It is good fit for short request/stream flows that eventually end and GC-ed.
