@@ -1,0 +1,37 @@
+{
+  "name": "oja",
+  "version": "1.0.0",
+  "description": "Lightweight pub/sub module with event backlog, timeout support that maps events to promises and back as well as chains them to other topics and flows.",
+  "main": "index.js",
+  "scripts": {
+    "test": "./node_modules/.bin/mocha test",
+    "test-coverage": "./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha -- -R spec"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dimichgh/oja.git"
+  },
+  "keywords": [
+    "stream",
+    "flow",
+    "pub",
+    "sub",
+    "pub-sub",
+    "event",
+    "eventemitter",
+    "emitter"
+  ],
+  "author": "Dmytro Semenov <dimichsdg@yahoo.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/dimichgh/oja/issues"
+  },
+  "homepage": "https://github.com/dimichgh/oja#readme",
+  "devDependencies": {
+    "istanbul": "^0.4.5",
+    "mocha": "^3.2.0"
+  },
+  "dependencies": {
+    "request-local": "^1.0.4"
+  }
+}

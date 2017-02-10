@@ -1,0 +1,11 @@
+.jshintrc
+Makefile
+.jshintignore
+doc
+test
+examples
+.atom-build.json
+tracking-context-request.md
+.beans
+.cache
+.git
