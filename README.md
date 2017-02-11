@@ -243,7 +243,7 @@ flow.define('data', runtime => {
 flow.catch(err => {
     console.log(err);   // prints Boom if linked to the above flow
 });
-// or
+// Or
 flow.consume('error', err => {
     console.log(err);   // prints Boom if linked to the above flow
 });
