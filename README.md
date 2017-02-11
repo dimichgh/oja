@@ -115,15 +115,13 @@ flow
 .consume('woo', (woo, runtime) => {    
     console.log(woo); // prints waa
     // define as event emitter
-    runtime.define('roo', emitter);
+    const roo = runtime.define('roo');
     // simulate async flow with two event emitted
     setImmediate(() => {
         // generate multiple events
-        emitter.emit('data', 'raa1');
-        emitter.emit('data', 'raa2');
+        roo.pub('raa1');
+        roo.pub('raa2');
     });
-
-    return emitter;
 })
 // validate
 .consume('roo', roo => {
@@ -236,12 +234,6 @@ flow.define('data', () => {
 // or
 flow.define('data', runtime => {
     runtime.pub(new Error('Boom'));
-});
-// or
-flow.define('data', runtime => {
-    const emitter = new EventEmitter();
-    setImmediate(() => emitter.emit('error', new Error('Boom')));
-    return emitter;
 });
 ```
 

@@ -3,7 +3,6 @@
 require('request-local');
 
 const Assert = require('assert');
-const EventEmitter = require('events').EventEmitter;
 const Flow = require('..').Flow;
 const EventContext = require('..').EventContext;
 const Domain = require('domain');
@@ -276,7 +275,7 @@ describe(__filename, () => {
             stageCtx.pub('ok');
         });
 
-        it('should stageContext and publish to topics, emitter, multiple publishes', next => {
+        it('should stageContext and publish to topics, multiple publishes', next => {
             const eventContext = new EventContext();
             const stageCtx = eventContext.stageContext(['foo', 'bar']);
             next = done(4, next);
@@ -335,46 +334,6 @@ describe(__filename, () => {
             .define('foo', Promise.resolve('bar'))
             .consume('foo', val => {
                 Assert.equal('bar', val);
-                next();
-            })
-            .consume('error', next);
-        });
-
-        it('should define publisher with emitter and consume via promise', next => {
-            const emitter = new EventEmitter();
-            const flow = new Flow();
-            flow.define('foo', emitter);
-            emitter.emit('data', 'bar');
-            flow.consume('foo').then(val => {
-                Assert.equal('bar', val);
-                next();
-            }).catch(next);
-        });
-
-        it('should define publisher with emitter to multiple topics', next => {
-            next = done(2, next);
-            const emitter = new EventEmitter();
-            const flow = new Flow();
-            flow.define(['foo', 'qaz'], emitter);
-            emitter.emit('data', 'bar');
-            flow.consume('foo', val => {
-                Assert.equal('bar', val);
-                next();
-            }).consume('qaz', val => {
-                Assert.equal('bar', val);
-                next();
-            }).catch(next);
-        });
-
-        it('should define publisher with emitter and consume via callback', next => {
-            const events = ['bar', 'qaz'];
-            const emitter = new EventEmitter();
-            const flow = new Flow();
-            flow.define('foo', emitter);
-            events.forEach(evt => emitter.emit('data', evt));
-            next = done(2, next);
-            flow.consume('foo', val => {
-                Assert.equal(events.shift(), val);
                 next();
             })
             .consume('error', next);
@@ -522,35 +481,6 @@ describe(__filename, () => {
             // emit error
             .define('foo', new Error('Boom'));
         });
-
-        // function shouldThrow(title, fn, regexp) {
-        //     describe(title, () => {
-        //         before(() => {
-        //             while(process.domain) {
-        //                 process.domain.exit();
-        //             }
-        //         });
-        //
-        //         after(() => {
-        //             while(process.domain) {
-        //                 process.domain.exit();
-        //             }
-        //         });
-        //
-        //         it('test', next => {
-        //             const domain = Domain.create();
-        //             domain.run(function () {
-        //                 fn(next);
-        //             });
-        //             domain.on('error', err => {
-        //                 console.log('------9999999')
-        //
-        //                 regexp.test(err.message);
-        //                 next();
-        //             });
-        //         });
-        //     });
-        // }
 
         describe('should fail due to uncaught error', () => {
             before(() => {

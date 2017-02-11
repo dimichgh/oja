@@ -28,7 +28,7 @@ class Flow {
        - pub(data) publishes data under the assigned topic or publisher topic.
          It handles promises, events, plain data
     */
-    define(topics, cb, _skipFlow) {
+    define(topics, cb) {
         const publisher = this.eventContext.stageContext(topics);
         if (typeof cb === 'function') {
             const ret = cb(publisher, this);
@@ -37,11 +37,6 @@ class Flow {
                 publisher.pub(ret);
             }
             return this; // to allow cascading style
-        }
-        if (cb instanceof EventEmitter) {
-            topics = Array.isArray(topics) ? topics : [topics];
-            cb.on('data', data => publisher.pub(data));
-            return this;
         }
         if (cb instanceof Promise) {
             cb.then(data => publisher.pub(data))
