@@ -215,7 +215,6 @@ class EventContext {
     }
 
     emit(name, value) {
-        this._queue = this._queue;
         this._queue[name] = this._queue[name] || [];
         this._queue[name].push(value);
 
