@@ -64,15 +64,21 @@ class Flow {
         topics = Array.isArray(topics) ? topics : [topics];
         const timer = setTimeout(() => {
             const state = this.state();
+            const pendingTopics = state.pending;
+
             const unresolved = [];
             const pending = [];
-            state.forEach(tp => {
+            pendingTopics.forEach(tp => {
                 topics.indexOf(tp) !== -1 ?
                     unresolved.push(tp) :
                     pending.push(tp);
             });
+
+            const queueState = `queue state ${JSON.stringify(state.queue)}`;
+            const msg = `Topic/s (${unresolved.join(',')}) timed out, pending topics (${pending.join(',') || 'none'}), ${queueState}`;
+
             this.define('error',
-                new Error(`Topic/s (${unresolved.join(',')}) timed out, pending topics (${pending.join(',') || 'none'})`));
+                new Error(msg));
         }, ms);
 
         this.consume(topics, () => {
@@ -165,12 +171,24 @@ class EventContext {
         Returns a list of topics that have not been resolved yet
     */
     state() {
-        return Object.keys(this._resolved).reduce((memo, name) => {
+        const queueState = Object.keys(this._queue).reduce((memo, topic) => {
+            const queue = this._queue[topic];
+            if (queue && queue.length) {
+                memo[topic] = queue.length;
+            }
+            return memo;
+        }, {});
+        const pending = Object.keys(this._resolved).reduce((memo, name) => {
             if (!this._resolved[name]) {
                 memo.push(name);
             }
             return memo;
         }, []);
+
+        return {
+            queue: queueState,
+            pending: pending
+        };
     }
 
     repub(type, handler) {

@@ -835,7 +835,8 @@ describe(__filename, () => {
             .consume('foo', () => {})
             .state();
 
-            Assert.deepEqual(['foo'], state);
+            Assert.deepEqual(['foo'], state.pending);
+            Assert.deepEqual({}, state.queue);
             next();
         });
 
@@ -844,7 +845,7 @@ describe(__filename, () => {
             .consume('foo', () => {})
             .timeout('foo', 1)
             .catch(err => {
-                Assert.equal('Topic/s (foo) timed out, pending topics (none)', err.message);
+                Assert.equal('Topic/s (foo) timed out, pending topics (none), queue state {}', err.message);
                 next();
             });
         });
@@ -855,7 +856,7 @@ describe(__filename, () => {
             .consume('bar', () => {})
             .timeout(['foo', 'bar'], 20)
             .catch(err => {
-                Assert.equal('Topic/s (bar) timed out, pending topics (none)', err.message);
+                Assert.equal('Topic/s (bar) timed out, pending topics (none), queue state {"foo":1}', err.message);
                 next();
             });
             setTimeout(() => {
@@ -870,7 +871,7 @@ describe(__filename, () => {
             .consume('qaz', () => {})
             .timeout(['foo', 'bar'], 20)
             .catch(err => {
-                Assert.equal('Topic/s (bar) timed out, pending topics (qaz)', err.message);
+                Assert.equal('Topic/s (bar) timed out, pending topics (qaz), queue state {"foo":1}', err.message);
                 next();
             });
             setTimeout(() => {
@@ -901,7 +902,7 @@ describe(__filename, () => {
             .catch(next)
             .state();
 
-            Assert.deepEqual(['foo'], state);
+            Assert.deepEqual(['foo'], state.pending);
             next();
         });
 
@@ -910,7 +911,7 @@ describe(__filename, () => {
             .consume(['foo', 'bar'], () => {})
             .state();
 
-            Assert.deepEqual(['foo', 'bar'], state);
+            Assert.deepEqual(['foo', 'bar'], state.pending);
             next();
         });
 
@@ -920,7 +921,7 @@ describe(__filename, () => {
             .consume(['foo', 'qaz'], () => {})
             .state();
 
-            Assert.deepEqual(['foo', 'bar', 'qaz'], state);
+            Assert.deepEqual(['foo', 'bar', 'qaz'], state.pending);
             next();
         });
 
@@ -931,7 +932,22 @@ describe(__filename, () => {
             .define('foo', '')
             .state();
 
-            Assert.deepEqual(['bar', 'qaz'], state);
+            Assert.deepEqual(['bar', 'qaz'], state.pending);
+            Assert.deepEqual({foo:1}, state.queue);
+            next();
+        });
+
+        it('should return state', next => {
+            const state = new Flow()
+            .define('qaz', '')
+            .define('wsx', '')
+            .define('foo', '')
+            .define('foo', '')
+            .define('foo', '')
+            .define('foo', '')
+            .state();
+
+            Assert.deepEqual({foo:4, qaz:1, wsx:1}, state.queue);
             next();
         });
 
