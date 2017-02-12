@@ -1,4 +1,6 @@
-# oja
+<p align="center">
+    <img src="https://github.com/trooba/branding/raw/master/images/oja.png" alt="Oja logo" width="200" /><br /><br />
+</p>
 
 Lightweight pub/sub module with event backlog, timeout support that maps events to promises and back as well as chains them to other topics.
 
