@@ -67,7 +67,7 @@ flow
     console.log(foo); // prints 'bar1' and 'bar2'
 })
 .define('foo', 'bar1')
-.define('foo', 'bar1');
+.define('foo', 'bar2');
 ```
 
 #### Using promise
