@@ -28,6 +28,43 @@ It accumulates events in the backlog for new subscribers. This is pros and cons:
 npm install oja -S
 ```
 
+### API
+
+* **Flow**([baseFlow]) creates a flow object
+    * *baseFlow* is an optional base flow that would be joined with a new flow.
+
+* **consume**(topics[, callback]) adds a consumer to the flow for the given topic or topics
+    * *topics* is one or more topics to capture by the handler
+    * **callback**((data|map), flow) is a handler, if provided, it will be called once all topics are resolved
+        * *data* resolved for the single topic
+        * *map* of resolved data mapped to corresponding topics
+        * *flow* is an instance of the flow for convenience
+    * **returns** promise or a list of promises if callback is not provided;
+        * *promise* for single topic  
+        * *promises* mapped to the provided topics
+
+* **consumeStream**(topic) returns a readable stream of events for the given topic
+
+* **define**(topics[, data|promise|function]) defines a producer for the given topic or an array of topics
+    * *topics* is a single topic or an array of topics to broadcast the data with.
+    * *data* will be immediately published under the given topics into the flow; in case an error object is passed, the flow will be stopped and an 'error' event will be broadcasted into the flow.
+    * *promise* will publish data once resolved; in case of reject, the flow will be stopped and an 'error' event will be broadcasted into the flow.
+    * **function**(publisher, flow) will be called immediately
+        * *publisher* is a convenience object to publish events for the assigned topic in async use-case
+        * *flow* is an instance of the current flow.
+        * if *function* returns a non-undefined value, it will be published under the assigned topic immediately; this is useful in a sync flow.
+
+* **on**(topic, callback) adds a listener for the given topic.
+* **once**(topic, callback) adds a listener for the given topic that will be called for the fist event.
+* **catch**(callback) adds an error handler to the flow. If no handlers are registered, it will re-throw the error.
+* **timeout**(topics, ms) sets a timeout for the topic or and array of topics. The timeout error will be generated if the topic(s) are not resolved within the specified period of time (in milliseconds)
+* **state**() returns a list of topics and their state (topics queue, pending topics)
+
+* **Publisher** API is a convenience object to publish events for the assigned topic
+    * **pub**(data|promise)
+        * *data* will be immediately published under the given topics into the flow; in case error object is passed, the flow will be stopped and 'error' event will be broadcasted into the flow.
+        * *promise* will publish data once resolved; in case of reject the flow will be stopped and 'error' generated.
+
 ### Usage
 
 #### Simple pub/sub
@@ -58,7 +95,7 @@ flow
 .define('foo', 'bar');
 ```
 
-#### Consuming multiple events
+#### Consuming multiple events for the given topic
 
 ```js
 // create consumer component
@@ -66,8 +103,37 @@ flow
 .consume('foo', foo => {
     console.log(foo); // prints 'bar1' and 'bar2'
 })
+// generate events
 .define('foo', 'bar1')
 .define('foo', 'bar2');
+```
+
+#### Consuming events as a stream
+
+```js
+const buffer = [];
+// create consumer stream
+const stream = flow.consumeStream('foo');
+stream.on('data', data => buffer.push(data));
+stream.on('end', () => {
+    console.log(buffer); // prints one, two, three
+})
+// generate some data
+flow.define('foo', 'one');
+flow.define('foo', 'two');
+flow.define('foo', 'three');
+```
+
+#### Consuming multiple topics in one short
+
+```js
+// consume multiple topics
+flow.consume(['foo', 'qoo'], input => {
+    console.log(input.foo);     // prints faa
+    console.log(input.qoo);     // prints qaa
+});
+flow.define('foo', 'faa');
+flow.define('qoo', 'qaa');
 ```
 
 #### Using promise
@@ -146,14 +212,17 @@ flow
     });
 })
 // can generate multiple events using pub
-.define('doo', runtime => {
-    runtime.pub('daa1');
-    runtime.pub('daa2');
-    runtime.pub('daa3');
+.define('doo', publisher => {
+    publisher.pub('daa1');
+    publisher.pub('daa2');
+    publisher.pub('daa3');
 })
 .consume('doo', doo => {
     console.log(doo); // prints daa1, daa2, daa3
 });
+.consumeStream('doo')
+    .on('data', console.log) // prints daa1, daa2, daa3
+    .on('end', () => console.log('end of "doo"'));
 // NOTE: we can consume first event via promise if we are not interested in the rest
 flow.consume('doo').then(doo => {
     console.log(doo); // prints daa1

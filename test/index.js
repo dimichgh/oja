@@ -3,8 +3,12 @@
 require('request-local');
 
 const Assert = require('assert');
-const Flow = require('..').Flow;
-const EventContext = require('..').EventContext;
+const EventEmitter = require('events').EventEmitter;
+
+const Oja = require('..');
+const Flow = Oja.Flow;
+const EventContext = Oja.EventContext;
+const ReadableStream = Oja.ReadableStream;
 const Domain = require('domain');
 
 describe(__filename, () => {
@@ -290,6 +294,249 @@ describe(__filename, () => {
             stageCtx.pub('ok');
             stageCtx.pub('ok');
         });
+    });
+
+    describe('ReadableStream', () => {
+
+        it('should create empty readable stream', next => {
+            const emitter = new EventEmitter();
+            const stream = new ReadableStream('topic', emitter);
+            stream.on('data', () => next(new Error('Should not happen')));
+            setImmediate(next);
+        });
+
+        it('should create empty readable stream and close it', next => {
+            const emitter = new EventEmitter();
+            const stream = new ReadableStream('topic', emitter);
+            emitter.emit('topic');
+            setImmediate(() => {
+                stream.on('data', () => next(new Error('Should not happen')));
+                stream.on('end', next);
+            });
+        });
+
+        it('should create empty readable stream and close it after start listening', next => {
+            const emitter = new EventEmitter();
+            const stream = new ReadableStream('topic', emitter);
+            setImmediate(() => {
+                stream.on('data', () => next(new Error('Should not happen')));
+                stream.on('end', next);
+                setImmediate(() => emitter.emit('topic'));
+            });
+        });
+
+        it('should read from stream', next => {
+            const emitter = new EventEmitter();
+            const stream = new ReadableStream('topic', emitter);
+            const buffer = [];
+            emitter.emit('topic', 'one');
+            setImmediate(() => {
+                stream.on('data', data => buffer.push(data));
+                stream.on('end', () => {
+                    Assert.deepEqual(['one', 'two'], buffer);
+                    next();
+                });
+            });
+
+            setImmediate(() => {
+                emitter.emit('topic', 'two');
+                setImmediate(() => {
+                    // complete
+                    emitter.emit('topic');
+                });
+            });
+        });
+
+        it('should close stream and ignore further events', next => {
+            const emitter = new EventEmitter();
+            const stream = new ReadableStream('topic', emitter);
+            const buffer = [];
+            const expected = [];
+            next = done(2, next);
+            // now consume it
+            stream.on('data', data => {
+                buffer.push(data);
+            });
+            stream.on('end', () => {
+                // Assert.deepEqual([], stream._buffer);
+                Assert.deepEqual(expected, buffer);
+                Assert.equal(19, buffer.length);
+                next();
+            });
+            // first make it buffer
+            for (var i = 1; i < 20; i++) {
+                emitter.emit('topic', i);
+                expected.push(i);
+            }
+            // check buffer is not mpety
+            Assert.ok(stream._buffer.length > 0);
+            setImmediate(() => {
+                emitter.emit('topic');
+                setImmediate(() => {
+                    // now generate more events
+                    for (var i = 1; i < 20; i++) {
+                        emitter.emit('topic', i);
+                    }
+                    setImmediate(next);
+                });
+            });
+        });
+
+        it('should buffer before consuming starts', next => {
+            const emitter = new EventEmitter();
+            const stream = new ReadableStream('topic', emitter);
+            const buffer = [];
+            const expected = [];
+            for (var i = 1; i < 20; i++) {
+                emitter.emit('topic', i);
+                expected.push(i);
+            }
+            // native stream buffer will consume 16 object entries by default
+            // the rest goes to oja stream buffer
+            Assert.deepEqual([17, 18, 19], stream._buffer);
+            emitter.emit('topic'); // mark the end
+
+            setImmediate(() => {
+                stream.on('data', data => {
+                    buffer.push(data);
+                });
+                stream.on('end', () => {
+                    Assert.deepEqual(expected, buffer);
+                    next();
+                });
+            });
+        });
+
+        it('should not buffer when stream is closed', next => {
+            const emitter = new EventEmitter();
+            const stream = new ReadableStream('topic', emitter);
+            const buffer = [];
+            const expected = [];
+            for (var i = 1; i < 20; i++) {
+                emitter.emit('topic', i);
+                expected.push(i);
+            }
+            emitter.emit('topic');
+            for (; i < 30; i++) {
+                emitter.emit('topic', i);
+            }
+
+            setImmediate(() => {
+                stream.on('data', data => {
+                    buffer.push(data);
+                });
+                stream.on('end', () => {
+                    Assert.deepEqual([], stream._buffer);
+                    Assert.deepEqual(expected, buffer);
+                    next();
+                });
+            });
+        });
+
+        it('should stop buffering once it is stopped, explicitly', next => {
+            const emitter = new EventEmitter();
+            const stream = new ReadableStream('topic', emitter);
+            const buffer = [];
+            const expected = [];
+            for (var i = 1; i < 5; i++) {
+                emitter.emit('topic', i);
+                expected.push(i);
+            }
+            stream.push(null);
+
+            setImmediate(() => {
+                stream.on('data', data => {
+                    buffer.push(data);
+                });
+                stream.on('end', () => {
+                    // Assert.deepEqual([], stream._buffer);
+                    Assert.deepEqual(expected, buffer);
+                    next();
+                });
+                for (; i < 10; i++) {
+                    emitter.emit('topic', i);
+                }
+            });
+        });
+
+        it('should not close the stream when oja buffer becomes empty', next => {
+            const emitter = new EventEmitter();
+            const stream = new ReadableStream('topic', emitter);
+            const buffer = [];
+            const expected = [];
+            // now consume it
+            stream.on('data', data => {
+                buffer.push(data);
+            });
+            stream.on('end', () => {
+                // Assert.deepEqual([], stream._buffer);
+                Assert.deepEqual(expected, buffer);
+                Assert.equal(40, buffer.length);
+                next();
+            });
+            // first make it buffer
+            for (var i = 1; i < 20; i++) {
+                emitter.emit('topic', i);
+                expected.push(i);
+            }
+            // check buffer is not mpety
+            Assert.ok(stream._buffer.length > 0);
+
+            setImmediate(() => {
+                // buffer should be empty now
+                Assert.equal(0, stream._buffer.length);
+                for (var i = 20; i <= 40; i++) {
+                    emitter.emit('topic', i);
+                    expected.push(i);
+                }
+                emitter.emit('topic');
+            });
+        });
+
+        it('should create filter other topics', next => {
+            const emitter = new EventEmitter();
+            const stream = new ReadableStream('topic', emitter);
+            const buffer = [];
+            emitter.emit('topic', 'one');
+
+            emitter.emit('foo', 'bar');
+            emitter.emit('foo');
+            setImmediate(() => {
+                emitter.emit('topic', 'two');
+                emitter.emit('topic');
+            });
+            // now consume it
+            stream.on('data', data => {
+                buffer.push(data);
+            });
+            stream.on('end', () => {
+                Assert.deepEqual(['one', 'two'], buffer);
+                next();
+            });
+        });
+
+        it('should handle stream error', next => {
+            const emitter = new EventEmitter();
+            const stream = new ReadableStream('topic', emitter);
+            emitter.on('error', err => {
+                Assert.equal('Boom', err.message);
+                next();
+            });
+            stream.emit('error', new Error('Boom'));
+        });
+
+        it('should close stream when error happens', next => {
+            const emitter = new EventEmitter();
+            const stream = new ReadableStream('topic', emitter);
+            stream.on('data', () => next('Should not happen'));
+            emitter.on('error', err => {
+                Assert.equal('Boom', err.message);
+                emitter.emit('topic', 'one');
+                setImmediate(next);
+            });
+            stream.emit('error', new Error('Boom'));
+        });
+
     });
 
     describe('Flow', () => {
@@ -1003,6 +1250,89 @@ describe(__filename, () => {
             });
         });
 
+        describe('Consume Stream', () => {
+
+            it('should create empty readable stream', next => {
+                const flow = new Flow();
+                const stream = flow.consumeStream('topic');
+                stream.on('data', () => next(new Error('Should not happen')));
+                stream.on('end', () => {
+                    next();
+                });
+                flow.define('topic', null);
+            });
+
+            it('should handle topic and end of stream', next => {
+                const flow = new Flow();
+                const stream = flow.consumeStream('topic');
+                const buffer = [];
+                stream.on('data', data => {
+                    buffer.push(data);
+                });
+                stream.on('end', () => {
+                    Assert.deepEqual(['one', 'two'], buffer);
+                    flow.define('topic', 'tree');
+                    setImmediate(() => {
+                        Assert.deepEqual(['one', 'two'], buffer);
+                        next();
+                    });
+                });
+                flow.define('topic', 'one');
+                flow.define('topic', 'two');
+                flow.define('topic', null);
+            });
+
+            it('should handle topic and end of stream, different setup', next => {
+                const flow = new Flow();
+                flow.define('topic', 'one');
+                flow.define('foo', 'bar');
+                const stream = flow.consumeStream('topic');
+                const buffer = [];
+                stream.on('data', data => {
+                    buffer.push(data);
+                });
+                stream.on('end', () => {
+                    Assert.deepEqual(['one', 'two'], buffer);
+                    flow.define('topic', 'tree');
+                    setImmediate(() => {
+                        Assert.deepEqual(['one', 'two'], buffer);
+                        next();
+                    });
+                });
+                setImmediate(() => {
+                    flow.define('topic', 'two');
+                    flow.define('topic', null);
+                    setImmediate(() => {
+                        flow.define('topic', 'four');
+                    });
+                });
+            });
+
+            it('should buffer till it is read', next => {
+                const flow = new Flow();
+                const stream = flow.consumeStream('topic');
+                const expected = [];
+                for (var i = 0; i < 20; i++) {
+                    flow.define('topic', i);
+                    expected.push(i);
+                }
+                flow.define('topic', null); // mark the end
+
+                Assert.ok(stream._buffer.length > 0);
+
+                setImmediate(() => {
+                    const buffer = [];
+                    stream.on('data', data => {
+                        buffer.push(data);
+                    });
+                    stream.on('end', () => {
+                        Assert.equal(0, stream._buffer.length);
+                        Assert.deepEqual(expected, buffer);
+                        next();
+                    });
+                });
+            });
+        });
     });
 });
 
