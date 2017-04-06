@@ -1,6 +1,7 @@
 'use strict';
 
 const EventEmitter = require('events').EventEmitter;
+const Readable = require('stream').Readable;
 
 class Flow {
     constructor(baseFlow) {
@@ -138,6 +139,15 @@ class Flow {
             return this;
         }
         return this.eventContext.get(topics);
+    }
+
+    /*
+        Consumes stream for the given topic.
+        Returns as readable stream
+        The end of stream should be marked as undefined data
+    */
+    consumeStream(topic) {
+        return new ReadableStream(topic, this.eventContext);
     }
 }
 
@@ -301,6 +311,58 @@ class StageContext extends EventContext {
     }
 }
 
+class ReadableStream extends Readable {
+    constructor(topic, emitter) {
+        super({objectMode: true});
+        // then init, this is a first time
+        emitter.on(topic, data => {
+            if (this._stopped) {
+                return;
+            }
+            if (data === undefined || data === null) {
+                this._stopped = true;
+            }
+            if (this._paused) {
+                this._buffer.push(data);
+                return;
+            }
+            this._continue(data);
+        });
+
+        this.once('error', err => {
+            this._stopped = true;
+            emitter.emit('error', err);
+        });
+        this._buffer = [];
+    }
+
+    push(data) {
+        if (data === null) {
+            this._stopped = true;
+        }
+
+        return super.push(data);
+    }
+
+    _read() {
+        this._paused = false;
+        while(!this._paused && this._buffer.length) {
+            this._continue(this._buffer.shift());
+        }
+    }
+
+    _continue(data) {
+        if (data === undefined || data === null) {
+            data = null; // mark stop down the stream
+            this._stopped = true;
+        }
+        this._paused = !this.push(data);
+    }
+}
+
+
+
 module.exports.Flow = Flow;
 module.exports.EventContext = EventContext;
 module.exports.StageContext = StageContext;
+module.exports.ReadableStream = ReadableStream;
