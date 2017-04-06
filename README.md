@@ -31,40 +31,39 @@ npm install oja -S
 ### API
 
 * **Flow**([baseFlow]) creates a flow object
-    * *baseFlow* is optional base flow that would be joined with this flow.
+    * *baseFlow* is an optional base flow that would be joined with a new flow.
 
-* **consume**(topics[, callback]) adds consumer to the flow for the given topic or topics
+* **consume**(topics[, callback]) adds a consumer to the flow for the given topic or topics
     * *topics* is one or more topics to capture by the handler
-    * **callback**(dataOrMap, flow) is a handler, if provided will be called once all topics are resolved
-        * **dataOrMap** will hold first instance of data for the corresponding topic
-            * *data* resolve for the single topic
-            * *map* of resolved data mapped to corresponding topics
-        * *flow* is an instance of the flow to convenience.
+    * **callback**((data|map), flow) is a handler, if provided, it will be called once all topics are resolved
+        * *data* resolved for the single topic
+        * *map* of resolved data mapped to corresponding topics
+        * *flow* is an instance of the flow for convenience
     * **returns** promise or a list of promises if callback is not provided;
         * *promise* for single topic  
-        * *promises* array corresponding to the topics provided
+        * *promises* mapped to the provided topics
 
 * **consumeStream**(topic) returns a readable stream of events for the given topic
 
-* **define**(topics[, data|promise|callback ]) defines a producer for the given topic or an array of topics
+* **define**(topics[, data|promise|function]) defines a producer for the given topic or an array of topics
     * *topics* is a single topic or an array of topics to broadcast the data with.
     * *data* will be immediately published under the given topics into the flow; in case an error object is passed, the flow will be stopped and an 'error' event will be broadcasted into the flow.
     * *promise* will publish data once resolved; in case of reject, the flow will be stopped and an 'error' event will be broadcasted into the flow.
-    * **callback**(publisher, flow) will be called immediately
+    * **function**(publisher, flow) will be called immediately
         * *publisher* is a convenience object to publish events for the assigned topic in async use-case
         * *flow* is an instance of the current flow.
-        * if callback returns a non-undefined value, it will be published under the assigned topic immediately; this is convenient in a sync flow.
+        * if *function* returns a non-undefined value, it will be published under the assigned topic immediately; this is useful in a sync flow.
 
-* **on**(topic, callback) adds a listener for the given topic
-* **once**(topic, callback) adds a listener for the given topic that will be called once
-* **catch**(callback) adds error handler to the flow. If no handlers are registered, it will throw an error in case an error is detected.
+* **on**(topic, callback) adds a listener for the given topic.
+* **once**(topic, callback) adds a listener for the given topic that will be called for the fist event.
+* **catch**(callback) adds an error handler to the flow. If no handlers are registered, it will re-throw the error.
 * **timeout**(topics, ms) sets a timeout for the topic or and array of topics. The timeout error will be generated if the topic(s) are not resolved within the specified period of time (in milliseconds)
 * **state**() returns a list of topics and their state (topics queue, pending topics)
 
-* **Publisher** API is a convenience object to publish event for the assigned topic
+* **Publisher** API is a convenience object to publish events for the assigned topic
     * **pub**(data|promise)
         * *data* will be immediately published under the given topics into the flow; in case error object is passed, the flow will be stopped and 'error' event will be broadcasted into the flow.
-        * *promise* will publish data once resolved; in case of reject the flow will be stopped and 'error'
+        * *promise* will publish data once resolved; in case of reject the flow will be stopped and 'error' generated.
 
 ### Usage
 
