@@ -122,6 +122,7 @@ stream.on('end', () => {
 flow.define('foo', 'one');
 flow.define('foo', 'two');
 flow.define('foo', 'three');
+flow.define('foo', null);
 ```
 
 #### Consuming multiple topics in one short
@@ -216,9 +217,10 @@ flow
     publisher.pub('daa1');
     publisher.pub('daa2');
     publisher.pub('daa3');
+    publisher.pub(null);
 })
 .consume('doo', doo => {
-    console.log(doo); // prints daa1, daa2, daa3
+    console.log(doo); // prints daa1, daa2, daa3, null
 });
 .consumeStream('doo')
     .on('data', console.log) // prints daa1, daa2, daa3
