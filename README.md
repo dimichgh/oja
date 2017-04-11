@@ -43,7 +43,8 @@ npm install oja -S
         * *promise* for single topic  
         * *promises* mapped to the provided topics
 
-* **consumeStream**(topic) returns a readable stream of events for the given topic
+* **consumeStream**(topic[, callback]) returns a readable stream of events for the given topic
+    * *Note:* if callback is provided, it will return a stream to the callback(stream) and continue cascading flow by returning 'this' reference;
 
 * **define**(topics[, data|promise|function]) defines a producer for the given topic or an array of topics
     * *topics* is a single topic or an array of topics to broadcast the data with.
@@ -222,11 +223,12 @@ flow
 .consume('doo', doo => {
     console.log(doo); // prints daa1, daa2, daa3, null
 });
-.consumeStream('doo')
-    .on('data', console.log) // prints daa1, daa2, daa3
-    .on('end', () => console.log('end of "doo"'));
+.consumeStream('doo', stream => {
+    stream.on('data', console.log) // prints daa1, daa2, daa3
+    stream.on('end', () => console.log('end of "doo"'));    
+})
 // NOTE: we can consume first event via promise if we are not interested in the rest
-flow.consume('doo').then(doo => {
+.consume('doo').then(doo => {
     console.log(doo); // prints daa1
 });
 

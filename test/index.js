@@ -1097,6 +1097,29 @@ describe(__filename, () => {
             });
         });
 
+        it('should timeout and show pending end of stream and main topic', next => {
+            new Flow()
+            .consume('foo', () => {})
+            .consumeStream('bar', stream => {})
+            .timeout('foo', 1)
+            .catch(err => {
+                Assert.equal('Topic/s (foo) timed out, pending topics (bar:end,bar), queue state {}', err.message);
+                next();
+            });
+        });
+
+        it('should timeout and show pending end of stream and main topic', next => {
+            new Flow()
+            .consume('foo', () => {})
+            .define('bar', 'boo')
+            .consumeStream('bar', stream => {})
+            .timeout('foo', 1)
+            .catch(err => {
+                Assert.equal('Topic/s (foo) timed out, pending topics (bar:end), queue state {"bar":1}', err.message);
+                next();
+            });
+        });
+
         it('should timeout for 2 topics, one resolved', next => {
             const flow = new Flow()
             .consume('foo', () => {})
@@ -1266,6 +1289,7 @@ describe(__filename, () => {
                 const flow = new Flow();
                 const stream = flow.consumeStream('topic');
                 const buffer = [];
+                next = done(2, next);
                 stream.on('data', data => {
                     buffer.push(data);
                 });
@@ -1277,6 +1301,8 @@ describe(__filename, () => {
                         next();
                     });
                 });
+                flow.consume('topic:end', () => next());
+
                 flow.define('topic', 'one');
                 flow.define('topic', 'two');
                 flow.define('topic', null);
@@ -1288,6 +1314,7 @@ describe(__filename, () => {
                 flow.define('foo', 'bar');
                 const stream = flow.consumeStream('topic');
                 const buffer = [];
+                next = done(2, next);
                 stream.on('data', data => {
                     buffer.push(data);
                 });
@@ -1299,6 +1326,7 @@ describe(__filename, () => {
                         next();
                     });
                 });
+                flow.consume('topic:end', () => next());
                 setImmediate(() => {
                     flow.define('topic', 'two');
                     flow.define('topic', null);
@@ -1331,6 +1359,27 @@ describe(__filename, () => {
                         next();
                     });
                 });
+            });
+
+            it('should emit topic:end to signal end of stream when stream error happens', next => {
+                const flow = new Flow();
+                const stream = flow.consumeStream('topic');
+                const buffer = [];
+
+                stream.on('data', data => {
+                    buffer.push(data);
+                });
+                stream.on('end', () => {
+                    next(new Error('Should never happen'));
+                });
+                flow.consume('topic:end', () => {
+                    Assert.deepEqual(['one', 'two'], buffer);
+                    next();
+                });
+                setImmediate(() => stream.emit('error', new Error('Boom')));
+
+                flow.define('topic', 'one');
+                flow.define('topic', 'two');
             });
         });
     });
