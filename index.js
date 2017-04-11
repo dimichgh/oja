@@ -146,8 +146,15 @@ class Flow {
         Returns as readable stream
         The end of stream should be marked as undefined data
     */
-    consumeStream(topic) {
-        return new ReadableStream(topic, this.eventContext);
+    consumeStream(topic, callback) {
+        // let's monitor end of stream to show in pending list if timeout happens
+        this.consume(topic + ':end');
+        const stream = new ReadableStream(topic, this.eventContext);
+        if (callback) {
+            callback(stream);
+            return this;
+        }
+        return stream;
     }
 }
 
@@ -314,6 +321,8 @@ class StageContext extends EventContext {
 class ReadableStream extends Readable {
     constructor(topic, emitter) {
         super({objectMode: true});
+        this.topic = topic;
+        this.emitter = emitter;
         // then init, this is a first time
         emitter.on(topic, data => {
             if (this._stopped) {
@@ -331,6 +340,7 @@ class ReadableStream extends Readable {
 
         this.once('error', err => {
             this._stopped = true;
+            emitter.emit(topic + ':end');
             emitter.emit('error', err);
         });
         this._buffer = [];
@@ -355,6 +365,7 @@ class ReadableStream extends Readable {
         if (data === undefined || data === null) {
             data = null; // mark stop down the stream
             this._stopped = true;
+            this.emitter.emit(this.topic + ':end');
         }
         this._paused = !this.push(data);
     }
