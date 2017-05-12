@@ -28,6 +28,8 @@ It accumulates events in the backlog for new subscribers. This is pros and cons:
 * Consume stream as events/promises
 * Consume promises as stream/events
 * Merge promise/streams/events into events/stream/pomises.
+* Query the state of the whole flow to see what is still pending and queues states for each topic.
+* Set resolution timeout for every topic, upon which it will provide what topic caused the timeout and pending topics.
 
 ### Install
 
