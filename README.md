@@ -22,7 +22,7 @@ It accumulates events in the backlog for new subscribers. This is pros and cons:
 * Accumulates events in memory, thus it cannot be used for long running flows as it eventually will run out of memory.
 * It is good fit for short request/stream flows that eventually end and GC-ed.
 
-Features:
+### Features:
 * Queuing events for later consuption. For example, if sonsumer added after the event happened, it would still receive it.
 * Consume events as stream/promises.
 * Consume stream as events/promises
