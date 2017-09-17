@@ -11,6 +11,8 @@ Lightweight pub/sub module with event backlog, timeout support that maps events 
 
 ### Idea
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/dimichgh/oja.svg)](https://greenkeeper.io/)
+
 The main reason for creation of this module is to allow decoupling business logic into smaller isolated stage components in the application via pub/sub API that leads to a simpler/isolated unit testing with easy mocking of input data and easy composition of components into higher async structures.
 
 ### Architecture
