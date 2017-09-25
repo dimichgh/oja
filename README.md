@@ -41,7 +41,7 @@ npm install oja -S
 
 ### API
 
-#### Flow
+#### Flow API
 
 The flow is generic definition of the control flow.
 
@@ -81,7 +81,7 @@ The flow is generic definition of the control flow.
         * *data* will be immediately published under the given topics into the flow; in case error object is passed, the flow will be stopped and 'error' event will be broadcasted into the flow.
         * *promise* will publish data once resolved; in case of reject the flow will be stopped and 'error' generated.
 
-#### Action
+#### Action API
 
 Action type is more specific to business unit that extends Flow further to allow defining executable independent business logic blocks called actions.
 
@@ -94,7 +94,8 @@ Actions cannot be added after they have been started.
 * **Action**() is an action constructor
 
 * **add**(action) adds an action to the main action
-* **execute**() starts the action execution
+* **execute**() is a method called by framework during activation; the action logic should be put into this method
+* **activate**() starts the action and all its children. This method better not be overridden or one needs to make sure a base function called.
 
 ### Usage
 
@@ -119,7 +120,7 @@ class MyAction extends Action {
     }
 }
 new MyAction()
-    .execute()
+    .activate()
     .consume('foo', data => console.log(data)); // will print bar
 ```
 
@@ -134,7 +135,10 @@ class Greet extends Action {
 }
 class Who extends Action {
     execute() {
-        this.define('who', 'World');
+        // demonstrate re-mapping
+        this.consume('name', name => {
+            this.define('who', name);
+        });
     }
 }
 class Greeting extends Action {
@@ -148,7 +152,8 @@ const helloAction = new Greeting();
 helloAction
     .add(new Hello())
     .add(new World())
-    .execute()
+    .activate()
+    .define('name', 'World')
     .consume('greeting', console.log); // prints Hello World
 ```
 

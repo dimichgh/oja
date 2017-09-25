@@ -380,13 +380,16 @@ class Action extends Flow {
         this.executed = false;
     }
 
-    execute() {
+    execute() {}
+
+    activate() {
         // starts the action
         if (this.executed) {
-            return;
+            return this;
         }
         this.executed = true;
-        this.actions.forEach(action => action.execute());
+        this.actions.forEach(action => action.activate());
+        this.execute();
 
         return this;
     }

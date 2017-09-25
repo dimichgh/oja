@@ -10,7 +10,8 @@ describe(__filename, () => {
 
     it('should execute action', () => {
         const action = new Action();
-        action.execute();
+        action.activate();
+        Assert.ok(action.executed);
     });
 
     it('should execute custom action', next => {
@@ -25,7 +26,7 @@ describe(__filename, () => {
             Assert.equal('bar', data);
             next();
         });
-        myaction.execute();
+        myaction.activate();
     });
 
     it('should propagate context from child action', next => {
@@ -43,7 +44,7 @@ describe(__filename, () => {
             Assert.equal('bar', data);
             next();
         });
-        base.execute();
+        base.activate();
     });
 
     it('should propagate context from base action to child', next => {
@@ -58,11 +59,34 @@ describe(__filename, () => {
         const base = new BaseAction();
         // show all waterfall style
         base.add(new MyAction())
-            .execute()
+            .activate()
             .consume('foo')
             .then(data => {
                 Assert.equal('bar', data);
                 next();
             });
+    });
+
+    it('should throw error when adding action that is already started', () => {
+        Assert.throws(() => {
+            new Action().add(new Action().activate());
+        }, /The action should not be in progress when it is added to the other action/);
+    });
+
+    it('should not re-execute the action', next => {
+        let executed;
+
+        class MyAction extends Action {
+            execute() {
+                Assert.ok(!executed);
+                executed = true;
+                next();
+                return this;
+            }
+        }
+
+        new MyAction()
+            .activate()
+            .activate();
     });
 });
