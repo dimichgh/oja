@@ -1,5 +1,6 @@
 'use strict';
 
+const Assert = require('assert');
 const EventEmitter = require('events').EventEmitter;
 const Readable = require('stream').Readable;
 
@@ -371,9 +372,39 @@ class ReadableStream extends Readable {
     }
 }
 
+class Action extends Flow {
+    constructor() {
+        super();
 
+        this.actions = [];
+        this.executed = false;
+    }
+
+    execute() {
+        // starts the action
+        if (this.executed) {
+            return;
+        }
+        this.executed = true;
+        this.actions.forEach(action => action.execute());
+
+        return this;
+    }
+
+    add(action) {
+        Assert.ok(action instanceof Action, 'The action beeing added does not of Action type');
+        if (action.executed) {
+            throw new Error('The action should not be in progress when it is added to the other action');
+        }
+        // remap to basec context
+        action.eventContext = this.eventContext;
+        this.actions.push(action);
+        return this;
+    }
+}
 
 module.exports.Flow = Flow;
+module.exports.Action = Action;
 module.exports.EventContext = EventContext;
 module.exports.StageContext = StageContext;
 module.exports.ReadableStream = ReadableStream;

@@ -41,6 +41,10 @@ npm install oja -S
 
 ### API
 
+#### Flow
+
+The flow is generic definition of the control flow.
+
 * **Flow**([baseFlow]) creates a flow object
     * *baseFlow* is an optional base flow that would be joined with a new flow.
 
@@ -77,9 +81,84 @@ npm install oja -S
         * *data* will be immediately published under the given topics into the flow; in case error object is passed, the flow will be stopped and 'error' event will be broadcasted into the flow.
         * *promise* will publish data once resolved; in case of reject the flow will be stopped and 'error' generated.
 
+#### Action
+
+Action type is more specific to business unit that extends Flow further to allow defining executable independent business logic blocks called actions.
+
+While flow starts executing immediately when one defines it, action is activate by calling `execute` method.
+
+The actions can be composed into more complex actions. Once the action is activated, it will implicitly activate all children actions.
+
+Actions cannot be added after they have been started.
+
+* **Action**() is an action constructor
+
+* **add**(action) adds an action to the main action
+* **execute**() starts the action execution
+
 ### Usage
 
-#### Simple pub/sub
+First we would like you to focus more on how you can apply this module to simplify your business logic with the use of Action type, then you will see more generic examples on how generic Flow type can be used and applied to the action type as it extends Flow.
+
+#### Action
+
+##### Execute an action
+
+```js
+const Action = require('oja').Action;
+new Action().execute();
+```
+
+##### Execute an action that generates an event
+
+```js
+const Action = require('oja').Action;
+class MyAction extends Action {
+    execute() {
+        this.define('foo', 'bar');
+    }
+}
+new MyAction()
+    .execute()
+    .consume('foo', data => console.log(data)); // will print bar
+```
+
+##### Composing more complex actions out of basic ones
+
+```js
+const Action = require('oja').Action;
+class Greet extends Action {
+    execute() {
+        this.define('greet', 'Hello');
+    }
+}
+class Who extends Action {
+    execute() {
+        this.define('who', 'World');
+    }
+}
+class Greeting extends Action {
+    execute() {
+        this.consume(['greet', 'who'], data => {
+            this.define('greeting', `${data.greet} ${data.who}`)
+        });
+    }
+}
+const helloAction = new Greeting();
+helloAction
+    .add(new Hello())
+    .add(new World())
+    .execute()
+    .consume('greeting', console.log); // prints Hello World
+```
+
+#### Flow
+
+The usage examples are generic and look more like generic event pub/sub mode.
+
+It can be used to create more specific controls like Action mentioned above.
+
+##### Simple pub/sub
 ```js
 const Flow = require('oja').Flow;
 const flow = new Flow();
@@ -96,7 +175,7 @@ const producer = flow.define('foo');
 producer.pub('bar');
 ```
 
-#### Shorter form for clarity:
+##### Shorter form for clarity:
 
 ```js
 // create consumer component
@@ -107,7 +186,7 @@ flow
 .define('foo', 'bar');
 ```
 
-#### Consuming multiple events for the given topic
+##### Consuming multiple events for the given topic
 
 ```js
 // create consumer component
@@ -120,7 +199,7 @@ flow
 .define('foo', 'bar2');
 ```
 
-#### Consuming events as a stream
+##### Consuming events as a stream
 
 ```js
 const buffer = [];
@@ -137,7 +216,7 @@ flow.define('foo', 'three');
 flow.define('foo', null);
 ```
 
-#### Consuming multiple topics in one short
+##### Consuming multiple topics in one short
 
 ```js
 // consume multiple topics
@@ -149,7 +228,7 @@ flow.define('foo', 'faa');
 flow.define('qoo', 'qaa');
 ```
 
-#### Using promise
+##### Using promise
 
 ```js
 // create consumer component
@@ -162,7 +241,7 @@ flow
 }));
 ```
 
-#### Multiple consumers, single producer
+##### Multiple consumers, single producer
 
 ```js
 // create consumer component
@@ -176,7 +255,7 @@ flow
 .define('foo', 'bar');
 ```
 
-#### Chaining actions, mixing, etc.
+##### Chaining actions, mixing, etc.
 
 ```js
 // NOTE: the order of consume/define does not matter
@@ -249,7 +328,7 @@ flow.consume('*', evt => {
 })
 ```
 
-#### Join flows together
+##### Join flows together
 
 ```js
 const base = new Flow();
@@ -274,7 +353,7 @@ flow.consume('foo', foo => {
 flow.define('shared', ''); // trigger the chain
 ```
 
-#### Timeouts
+##### Timeouts
 
 The promise chain may be hard to figure out where it is blocked.
 Oja allows to set a timeout for the given topics and upon the timeout would provide an error message listing topics that have not been resolved yet.
@@ -291,7 +370,7 @@ flow
 });
 ```
 
-#### Querying for the state
+##### Querying for the state
 
 Oja provides a current status of topcis that have not been resolved
 
@@ -305,9 +384,9 @@ flow
 console.log(flow.state()); // prints [foo, too]
 ```
 
-#### Error
+##### Error
 
-##### Throwing error
+###### Throwing error
 
 ```js
 flow.define('error', new Error('Boom'));
@@ -323,7 +402,7 @@ flow.define('data', runtime => {
 });
 ```
 
-##### Catching error
+###### Catching error
 
 ```js
 flow.catch(err => {
@@ -335,7 +414,7 @@ flow.consume('error', err => {
 });
 ```
 
-##### Error stops flow
+###### Error stops flow
 
 The error will prevent further events including error events from publishing.
 
@@ -358,4 +437,11 @@ flow
 .catch(err => { // catch error
     console.log(err);   // print Boom
 });
+```
+
+###### Composing complex flows
+
+```js
+const base = new Flow();
+new Foo(base)
 ```
