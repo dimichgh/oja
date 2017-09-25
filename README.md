@@ -2,7 +2,7 @@
     <img src="https://github.com/trooba/branding/raw/master/images/oja.png" alt="Oja logo" width="200" /><br /><br />
 </p>
 
-Lightweight pub/sub module with event backlog, timeout support that maps events to promises and back as well as chains them to other topics.
+Lightweight pub/sub module with event backlog, timeout support that maps events to promises and back as well as chains them to other topics. Use it to structure application business logic.
 
 [![codecov](https://codecov.io/gh/dimichgh/oja/branch/master/graph/badge.svg)](https://codecov.io/gh/dimichgh/oja)
 [![Build Status](https://travis-ci.org/dimichgh/oja.svg?branch=master)](https://travis-ci.org/dimichgh/oja) [![NPM](https://img.shields.io/npm/v/oja.svg)](https://www.npmjs.com/package/oja)
