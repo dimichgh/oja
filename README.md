@@ -107,7 +107,7 @@ First we would like you to focus more on how you can apply this module to simpli
 
 ```js
 const Action = require('oja').Action;
-new Action().execute();
+new Action().activate();
 ```
 
 ##### Execute an action that generates an event
