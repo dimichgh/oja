@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.0.1
+* Fix: should allow registration of child actions in execute method of a main action and activate them afterwards
+
 ## v1.0.0
 * Added support to add array of actions to a base action
 ```js
