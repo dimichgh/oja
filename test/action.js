@@ -173,4 +173,42 @@ describe(__filename, () => {
             next();
         });
     });
+
+    it('should add action during execution of base and still execute them successfully', next => {
+        class MyFooAction extends Action {
+            execute() {
+                this.define('foo', 'bar');
+            }
+        }
+
+        class MyQazAction extends Action {
+            execute() {
+                this.define('qax', 'wsx');
+            }
+        }
+
+        class BaseAction extends Action {
+            execute() {
+                base.add(
+                    function (flow) {
+                        flow.define('edc', 'rfv');
+                    },
+                    new MyQazAction(),
+                    new MyFooAction()
+                );
+            }
+        }
+
+        const base = new BaseAction();
+
+        base
+        .activate()
+        .consume(['foo', 'qax', 'edc'])
+        .then(data => {
+            Assert.equal('bar', data.foo);
+            Assert.equal('wsx', data.qax);
+            Assert.equal('rfv', data.edc);
+            next();
+        });
+    });
 });
