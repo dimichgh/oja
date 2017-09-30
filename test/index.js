@@ -702,18 +702,13 @@ describe(__filename, () => {
             const flow = new Flow();
             flow.define(['foo', 'qaz'], 'bar');
 
-            next = done(2, next);
-
             const proms = flow
             .consume('error', next)
             .consume(['foo', 'qaz']);
 
-            proms.foo.then(val => {
-                Assert.equal('bar', val);
-                next();
-            });
-            proms.qaz.then(val => {
-                Assert.equal('bar', val);
+            proms.then(data => {
+                Assert.equal('bar', data.foo);
+                Assert.equal('bar', data.qaz);
                 next();
             });
         });

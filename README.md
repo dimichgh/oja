@@ -93,7 +93,8 @@ Actions cannot be added after they have been started.
 
 * **Action**() is an action constructor
 
-* **add**(action) adds an action to the main action
+* **add**(action) adds actions to the main action
+    * action can be a single action or an array of actions. Action parameter can also be a generic function that accepts flow reference:
 * **execute**() is a method called by framework during activation; the action logic should be put into this method
 * **activate**() starts the action and all its children. This method better not be overridden or one needs to make sure a base function called.
 
@@ -133,13 +134,12 @@ class Greet extends Action {
         this.define('greet', 'Hello');
     }
 }
-class Who extends Action {
-    execute() {
-        // demonstrate re-mapping
-        this.consume('name', name => {
-            this.define('who', name);
-        });
-    }
+// demonstrate generic function instead of action object
+function who(flow) {
+    // demonstrate re-mapping
+    flow.consume('name', name => {
+        flow.define('who', name);
+    });
 }
 class Greeting extends Action {
     execute() {
@@ -151,7 +151,7 @@ class Greeting extends Action {
 const helloAction = new Greeting();
 helloAction
     .add(new Hello())
-    .add(new World())
+    .add(who)
     .activate()
     .define('name', 'World')
     .consume('greeting', console.log); // prints Hello World

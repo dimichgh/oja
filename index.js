@@ -121,10 +121,18 @@ class Flow {
                 return this; // for cascading style
             }
 
-            return topics.reduce((memo, topic) => {
-                memo[topic] = this.eventContext.get(topic);
+            const promises = topics.reduce((memo, topic) => {
+                memo.push(this.eventContext.get(topic));
                 return memo;
-            }, {});
+            }, []);
+
+            return Promise.all(promises)
+            .then(results => {
+                return results.reduce((memo, data, index) => {
+                    memo[topics[index]] = data;
+                    return memo;
+                }, {});
+            });
         }
 
         // handle single topics
@@ -395,14 +403,44 @@ class Action extends Flow {
     }
 
     add(action) {
-        Assert.ok(action instanceof Action, 'The action beeing added does not of Action type');
-        if (action.executed) {
-            throw new Error('The action should not be in progress when it is added to the other action');
+        let actions = [];
+        if (arguments.length > 1) {
+            actions = actions.concat([].slice.call(arguments));
         }
-        // remap to basec context
-        action.eventContext = this.eventContext;
-        this.actions.push(action);
+        else {
+            if (Array.isArray(arguments[0])) {
+                actions = actions.concat(arguments[0]);
+            }
+            else {
+                actions.push(arguments[0]);
+            }
+        }
+
+        actions.forEach(action => {
+            if (typeof action === 'function') {
+                action = new FunctionAction(action);
+            }
+            Assert.ok(action instanceof Action, 'The action beeing added does not of Action type');
+            if (action.executed) {
+                throw new Error('The action should not be in progress when it is added to the other action');
+            }
+            // remap to basec context
+            action.eventContext = this.eventContext;
+            this.actions.push(action);
+        });
+
         return this;
+    }
+}
+
+class FunctionAction extends Action {
+    constructor(fun) {
+        super();
+        this.fun = fun;
+    }
+
+    execute() {
+        return this.fun(this);
     }
 }
 
