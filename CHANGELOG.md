@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.1.0
+* Added reader to support async/await syntax.
+
 ## v1.0.1
 * Fix: should allow registration of child actions in execute method of a main action and activate them afterwards
 

@@ -62,6 +62,10 @@ The flow is generic definition of the control flow.
 * **consumeStream**(topic[, callback]) returns a readable stream of events for the given topic
     * *Note:* if callback is provided, it will return a stream to the callback(stream) and continue cascading flow by returning 'this' reference;
 
+* **getReader**(topic) returns a reader for a series of events published under given topic.
+    * reader.**next()** returns a promise for a single event.
+        * The reader reached the end of stream whenever the promise resolves to `undefined`
+
 * **define**(topics[, data|promise|function]) defines a producer for the given topic or an array of topics
     * *topics* is a single topic or an array of topics to broadcast the data with.
     * *data* will be immediately published under the given topics into the flow; in case an error object is passed, the flow will be stopped and an 'error' event will be broadcasted into the flow.
@@ -220,6 +224,33 @@ flow.define('foo', 'one');
 flow.define('foo', 'two');
 flow.define('foo', 'three');
 flow.define('foo', null);
+```
+
+##### Consuming events via reader
+
+```js
+const Flow = require('.').Flow;
+const buffer = [];
+const flow = new Flow();
+// create consumer stream
+const reader = flow.getReader('foo');
+// generate some data
+flow.define('foo', 'one');
+flow.define('foo', 'two');
+flow.define('foo', 'three');
+flow.define('foo', null);
+
+async function read() {
+    while(true) {
+        const data = await reader.next()
+        if (data === undefined) {
+            break;
+        }
+        console.log(data);
+    }
+}
+
+read();
 ```
 
 ##### Consuming multiple topics in one short

@@ -165,6 +165,45 @@ class Flow {
         }
         return stream;
     }
+
+    /*
+        Returns a reader for the given topic.
+        It is useful when reading stream of events for the given topic.
+        At the end of stream an undefined value will be returned.
+        The reader returns a promise for async/await pattern.
+    */
+    getReader(topic) {
+        const pending = [];
+        const resolved = [];
+        let completed = false;
+        const stream = this.consumeStream(topic);
+
+        function publish(data) {
+            if (pending.length) {
+                const resolve = pending.shift();
+                return resolve(data);
+            }
+            resolved.push(data);
+            completed = true;
+        }
+
+        stream.on('data', publish);
+        stream.once('end', publish);
+
+        return {
+            next() {
+                if (resolved.length) {
+                    return Promise.resolve(resolved.shift());
+                }
+                if (completed) {
+                    return Promise.reject(new Error(`The reader(${topic}) is already closed`));
+                }
+                return new Promise(resolve => {
+                    pending.push(resolve);
+                });
+            }
+        };
+    }
 }
 
 class EventContext {
