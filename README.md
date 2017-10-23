@@ -8,10 +8,9 @@ Lightweight pub/sub module with event backlog, timeout support that maps events 
 [![Build Status](https://travis-ci.org/dimichgh/oja.svg?branch=master)](https://travis-ci.org/dimichgh/oja) [![NPM](https://img.shields.io/npm/v/oja.svg)](https://www.npmjs.com/package/oja)
 [![Downloads](https://img.shields.io/npm/dm/oja.svg)](http://npm-stat.com/charts.html?package=oja)
 [![Known Vulnerabilities](https://snyk.io/test/github/dimichgh/oja/badge.svg)](https://snyk.io/test/github/dimichgh/oja)
+[![Greenkeeper badge](https://badges.greenkeeper.io/dimichgh/oja.svg)](https://greenkeeper.io/)
 
 ### Idea
-
-[![Greenkeeper badge](https://badges.greenkeeper.io/dimichgh/oja.svg)](https://greenkeeper.io/)
 
 The main reason for creation of this module is to allow decoupling business logic into smaller isolated stage components in the application via pub/sub API that leads to a simpler/isolated unit testing with easy mocking of input data and easy composition of components into higher async structures.
 
