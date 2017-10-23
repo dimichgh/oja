@@ -4,6 +4,7 @@ require('request-local');
 
 const Assert = require('assert');
 const EventEmitter = require('events').EventEmitter;
+const Async = require('async');
 
 const Oja = require('..');
 const Flow = Oja.Flow;
@@ -1280,6 +1281,20 @@ describe(__filename, () => {
                 flow.define('topic', null);
             });
 
+            it('should create empty reader', next => {
+                const flow = new Flow();
+                const reader = flow.getReader('topic');
+                reader
+                .next()
+                .then(data => {
+                    Assert.equal(undefined, data);
+                    next();
+                })
+                .catch(next);
+
+                flow.define('topic', null);
+            });
+
             it('should handle topic and end of stream', next => {
                 const flow = new Flow();
                 const stream = flow.consumeStream('topic');
@@ -1300,6 +1315,53 @@ describe(__filename, () => {
 
                 flow.define('topic', 'one');
                 flow.define('topic', 'two');
+                flow.define('topic', null);
+            });
+
+            it('should handle topic and end of stream via reader', next => {
+                const flow = new Flow();
+                const reader = flow.getReader('topic');
+                const buffer = [];
+
+                function read(data) {
+                    buffer.push(data);
+                }
+
+                reader.next().then(read);
+                reader.next().then(read);
+                reader.next().then(data => {
+                    Assert.equal(undefined, data);
+                    Assert.deepEqual(['one', 'two'], buffer);
+                    flow.define('topic', 'tree');
+                    setImmediate(() => {
+                        Assert.deepEqual(['one', 'two'], buffer);
+                        next();
+                    });
+                });
+
+                flow.define('topic', 'one');
+                flow.define('topic', 'two');
+                flow.define('topic', null);
+            });
+
+            it('should throw error on completed reder', next => {
+                const flow = new Flow();
+                const reader = flow.getReader('topic');
+                reader
+                .next()
+                .then(data => {
+                    Assert.equal('one', data);
+                    return reader.next();
+                })
+                .then(data => {
+                    Assert.equal(undefined, data);
+                    return reader.next();
+                })
+                .catch(err => {
+                    Assert.equal('The reader(topic) is already closed', err.message);
+                    next();
+                });
+                flow.define('topic', 'one');
                 flow.define('topic', null);
             });
 
@@ -1353,6 +1415,37 @@ describe(__filename, () => {
                         Assert.deepEqual(expected, buffer);
                         next();
                     });
+                });
+            });
+
+            it('should buffer till it is read via reader', next => {
+                const flow = new Flow();
+                const reader = flow.getReader('topic');
+                const expected = [];
+                for (var i = 0; i < 20; i++) {
+                    flow.define('topic', i);
+                    expected.push(i);
+                }
+                expected.push(undefined);
+                flow.define('topic', null); // mark the end
+
+                const buffer = [];
+                Async.doWhilst(next => {
+                    reader
+                    .next()
+                    .then(data => {
+                        buffer.push(data);
+                        next();
+                    });
+                },
+                () => {
+                    const data = buffer[buffer.length - 1];
+                    return data !== undefined;
+                },
+                err => {
+                    Assert.ok(!err, err && err.stack);
+                    Assert.deepEqual(expected, buffer);
+                    next();
                 });
             });
 

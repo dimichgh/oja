@@ -28,6 +28,7 @@
   },
   "homepage": "https://github.com/dimichgh/oja#readme",
   "devDependencies": {
+    "async": "^2.5.0",
     "istanbul": "^0.4.5",
     "mocha": "^4.0.0"
   },
