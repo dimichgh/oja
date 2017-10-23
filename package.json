@@ -1,6 +1,6 @@
 {
   "name": "oja",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Lightweight pub/sub module with event backlog, timeout support that maps events to promises and back as well as chains them to other topics and flows.",
   "main": "index.js",
   "scripts": {
