@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.1.1
+* Fixed: should correctly detect end of stream when reader is used.
+
 ## v1.1.0
 * Added reader to support async/await syntax.
 

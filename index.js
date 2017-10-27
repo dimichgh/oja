@@ -184,7 +184,9 @@ class Flow {
                 return resolve(data);
             }
             resolved.push(data);
-            completed = true;
+            if (data === undefined) {
+                completed = true;
+            }
         }
 
         stream.on('data', publish);

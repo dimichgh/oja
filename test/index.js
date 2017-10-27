@@ -1344,6 +1344,38 @@ describe(__filename, () => {
                 flow.define('topic', null);
             });
 
+            it('should handle topic and end of stream in async use-case', next => {
+                const flow = new Flow();
+                const reader = flow.getReader('topic');
+                const buffer = [];
+
+                function read(data) {
+                    buffer.push(data);
+                }
+
+                flow.define('topic', 'one');
+
+                setImmediate(() => {
+                    reader.next().then(read);
+                    reader.next().then(read);
+                    reader.next().then(data => {
+                        Assert.equal(undefined, data);
+                        Assert.deepEqual(['one', 'two'], buffer);
+                        flow.define('topic', 'tree');
+                        setImmediate(() => {
+                            Assert.deepEqual(['one', 'two'], buffer);
+                            next();
+                        });
+                    });
+
+                    flow.define('topic', 'two');
+                    setImmediate(() => {
+                        flow.define('topic', null);
+                    });
+                });
+
+            });
+
             it('should throw error on completed reder', next => {
                 const flow = new Flow();
                 const reader = flow.getReader('topic');
