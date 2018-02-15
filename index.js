@@ -13,6 +13,10 @@ class Flow {
         this.eventContext = new EventContext();
     }
 
+    setMaxListeners(value) {
+        this.eventContext._emitter.setMaxListeners(value);
+    }
+
     /*
        Define a publisher with the given topic.
        define(topics[, callback])
@@ -225,8 +229,8 @@ class EventContext {
         Object.assign(this._context, context);
         this._emitter = new EventEmitter();
         // increase limit to accomodate big networks of components where
-        // everyone listens to error 
-        this._emitter.setMaxListeners(100);
+        // everyone listens to error
+        this._emitter.setMaxListeners(20);
     }
 
     stageContext(topics) {
