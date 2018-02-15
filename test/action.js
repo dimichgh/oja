@@ -231,5 +231,20 @@ describe(__filename, () => {
             }
             setImmediate(next);
         });
+
+        it('should not trigget too many listeners warning, using setMaxListeners explicitly', next => {
+            console.error = function (msg) {
+                if (/Possible EventEmitter memory leak detected/.test(msg)) {
+                    setImmediate(() => next(new Error('Should not happen')));
+                }
+                _error.apply(console, arguments);
+            };
+            const action = new Action();
+            action.setMaxListeners(30);
+            for (var i = 0; i < 25; i++) {
+                action.consume('topic', () => {});
+            }
+            setImmediate(next);
+        });
     });
 });

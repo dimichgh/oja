@@ -77,6 +77,7 @@ The flow is generic definition of the control flow.
 
 * **on**(topic, callback) adds a listener for the given topic.
 * **once**(topic, callback) adds a listener for the given topic that will be called for the fist event.
+* **setMaxListeners**(number) allows to increase a limit on how many listeners can be added to the given action, similar to event emitters.
 * **catch**(callback) adds an error handler to the flow. If no handlers are registered, it will re-throw the error.
 * **timeout**(topics, ms) sets a timeout for the topic or and array of topics. The timeout error will be generated if the topic(s) are not resolved within the specified period of time (in milliseconds)
 * **state**() returns a list of topics and their state (topics queue, pending topics)
