@@ -211,4 +211,25 @@ describe(__filename, () => {
             next();
         });
     });
+
+    describe('emitter warning', () => {
+        let _error = console.error;
+        after(() => {
+            console.error = _error;
+        });
+
+        it('should not trigget too many listeners warning', next => {
+            console.error = function (msg) {
+                if (/Possible EventEmitter memory leak detected/.test(msg)) {
+                    setImmediate(() => next(new Error('Should not happen')));
+                }
+                _error.apply(console, arguments);
+            };
+            const action = new Action();
+            for (var i = 0; i < 15; i++) {
+                action.consume('topic', () => {});
+            }
+            setImmediate(next);
+        });
+    });
 });
