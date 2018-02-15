@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.1.2
+* Increased a limit of listeners to 100 for big action networks
+
 ## v1.1.1
 * Fixed: should correctly detect end of stream when reader is used.
 

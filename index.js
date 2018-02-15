@@ -224,6 +224,9 @@ class EventContext {
         this._queue = {};
         Object.assign(this._context, context);
         this._emitter = new EventEmitter();
+        // increase limit to accomodate big networks of components where
+        // everyone listens to error 
+        this._emitter.setMaxListeners(100);
     }
 
     stageContext(topics) {
