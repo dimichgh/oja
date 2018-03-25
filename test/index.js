@@ -1145,6 +1145,53 @@ describe(__filename, () => {
             }, 5);
         });
 
+        it('should timeout for 2 topics without uncaught promise rejection', next => {
+            process.removeAllListeners('unhandledRejection');
+            process.once('unhandledRejection', err => {
+                next(err);
+            });
+            const flow = new Flow()
+            .consume('foo', () => {})
+            .consume('bar', () => {})
+            .consume('qaz', () => {})
+            .timeout(['foo', 'bar'], 20)
+            .catch(err => {
+                Assert.equal('Topic/s (bar) timed out, pending topics (qaz), queue state {"foo":1}', err.message);
+                next();
+            });
+            setTimeout(() => {
+                flow.define('foo', '');
+            }, 5);
+        });
+
+        it('should timeout throw uncaught error', next => {
+            process.removeAllListeners('unhandledRejection');
+            process.once('unhandledRejection', err => {
+                next();
+            });
+            const flow = new Flow()
+            .consume(['foo'], () => {})
+            .timeout('foo', 20);
+        });
+
+        it('should timeout on one of the timed topics', next => {
+            process.removeAllListeners('unhandledRejection');
+            process.once('unhandledRejection', err => {
+                next(err);
+            });
+            const flow = new Flow()
+            .consume(['foo', 'bar'], () => {})
+            .timeout(['foo', 'bar'], 100)
+            .catch(err => {
+                Assert.equal('Topic/s (bar) timed out, pending topics (none), queue state {"foo":1}', err.message);
+                next();
+            });
+
+            setTimeout(() => {
+                flow.define('foo', '');
+            }, 5);
+        });
+
         it('should not timeout for 2 topics, one pending', next => {
             const flow = new Flow()
             .consume('foo', () => {})

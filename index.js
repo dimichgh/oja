@@ -62,7 +62,11 @@ class Flow {
         if (arguments.length !== 1) {
             throw new Error('Invalid arguments');
         }
-        this.consume('error', callback);
+        this._catchHandler = err => {
+            this._catchHandler = (err) => {};
+            callback(err);
+        };
+        this.consume('error', this._catchHandler);
         return this;
     }
 
@@ -121,6 +125,12 @@ class Flow {
                     });
                     // unlink any error in cb from promise flow to let it fail
                     setImmediate(() => cb(ret, this));
+                })
+                .catch(err => {
+                    if (this._catchHandler) {
+                        return this._catchHandler(err);
+                    }
+                    throw err;
                 });
                 return this; // for cascading style
             }

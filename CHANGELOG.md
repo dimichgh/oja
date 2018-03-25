@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.1.3
+* Fixed: should not emit Unhandled promise rejection when the error is actually handled
+
 ## v1.1.2
 * Increased a limit of listeners to 100 for big action networks
 
