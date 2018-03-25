@@ -91,9 +91,10 @@ class Flow {
                 new Error(msg));
         }, ms);
 
-        this.consume(topics, () => {
-            clearTimeout(timer);
-        });
+        this
+        .consume(topics)
+        .then(() => clearTimeout(timer))
+        .catch(() => clearTimeout(timer));
 
         return this;
     }
@@ -130,7 +131,6 @@ class Flow {
                     if (this._catchHandler) {
                         return this._catchHandler(err);
                     }
-                    throw err;
                 });
                 return this; // for cascading style
             }
@@ -153,7 +153,9 @@ class Flow {
         if (cb) {
             this.eventContext.on(topics, data => {
                 if (data instanceof Promise) {
-                    data.then(cb);
+                    data.then(cb).catch(err => {
+                        this.define('error', err);
+                    });
                     return;
                 }
 
@@ -171,7 +173,7 @@ class Flow {
     */
     consumeStream(topic, callback) {
         // let's monitor end of stream to show in pending list if timeout happens
-        this.consume(topic + ':end');
+        this.consume(topic + ':end').catch(() => {});
         const stream = new ReadableStream(topic, this.eventContext);
         if (callback) {
             callback(stream);

@@ -1,12 +1,22 @@
-node_js:
-- "4"
-- "6"
-- "8"
 language: node_js
+matrix:
+  include:
+    - node_js: "4"
+      env:
+          - TARGET=test-no-async
+          - TESTS=test/action.js test/index.js
+    - node_js: "6"
+      env:
+          - TARGET=test-no-async
+          - TESTS=test/action.js test/index.js
+    - node_js: "8"
+      env:
+          - TARGET=test
+          - TESTS=test/index test/*.js
 install:
 - npm install
 - npm install -g codecov istanbul
 script:
-- npm test
-- istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec
+- npm run $TARGET
+- istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- --timeout 5s -R spec $TESTS
 - codecov
