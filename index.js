@@ -485,11 +485,18 @@ class Action extends Flow {
                 throw new Error('The action should not be in progress when it is added to the other action');
             }
             // remap to basec context
-            action.eventContext = this.eventContext;
+            action.setEventContext(this.eventContext);
             this.actions.push(action);
         });
 
         return this;
+    }
+
+    setEventContext(eventContext) {
+        this.eventContext = eventContext;
+        this.actions.forEach(action => {
+            action.setEventContext(eventContext);
+        });
     }
 }
 

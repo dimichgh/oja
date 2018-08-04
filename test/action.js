@@ -247,4 +247,61 @@ describe(__filename, () => {
             setImmediate(next);
         });
     });
+
+    it('should update childrens context when parent gets new context when added to other action', next => {
+        class FooAction extends Action {
+            execute() {
+                this.consume('common', () => {
+                    this.define('foo', 'foo-val');
+                });
+            }
+        }
+
+        class BarAction extends Action {
+            constructor() {
+                super();
+                this.add(new FooAction());
+            }
+            execute() {
+                this.consume('common', () => {
+                    this.define('bar', 'bar-val');
+                });
+            }
+        }
+
+        class QweAction extends Action {
+            constructor() {
+                super();
+                this.add(new FooAction());
+            }
+            execute() {
+                this.consume('common', () => {
+                    this.define('qwe', 'qwe-val');
+                });
+            }
+        }
+
+        class QazAction extends Action {
+            constructor() {
+                super();
+                this.add(new BarAction());
+                this.add(new QweAction());
+            }
+
+            execute() {
+                this.consume('common', () => {
+                    this.define('qaz', 'parent-val');
+                });
+            }
+        }
+
+        new QazAction()
+        .activate()
+        .define('common', 'common')
+        .consume(['foo', 'bar', 'qwe', 'qaz'])
+        .then(data => {
+            next();
+        })
+        .catch(next);
+    });
 });
