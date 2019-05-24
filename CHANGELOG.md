@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.2.0
+* Added context based approach.
+
 ## v1.1.3
 * Fixed: should not emit Unhandled promise rejection when the error is actually handled
 
