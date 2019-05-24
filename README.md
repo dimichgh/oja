@@ -12,9 +12,9 @@ Lightweight pub/sub module with event backlog, timeout support that maps events 
 
 # Idea
 
-The main reason for creation of this module is to allow decoupling business logic into smaller isolated stage components in the application via pub/sub API and/or context based approach that leads to a simpler/isolated unit testing with easy mocking of input data and easy composition of components into higher async structures.
+The main reason for creation of this module is to allow decoupling business logic into smaller isolated standalone components in the application via pub/sub API and/or common context that leads to a simpler/isolated unit testing with easy mocking of input data and easy composition of components into higher async structures.
 
-The context based approach allows a developer to slice the business logic into small, isolated busness actions and encourages to use the same action interface across application code, which makes the code more predictable, easy to define and test with mock data and yes, boring.
+The context based approach allows a developer to slice the business logic into small, isolated busness actions that communicate to each other via context and that encourages developers to use the same action interface across application code, which makes the code more predictable, easy to define and test with mock data and yes, boring.
 
 # Architecture
 
@@ -119,11 +119,11 @@ Actions cannot be added after they have been started.
 
 While pub/sub is based on knowledge of topics consumed and published, context based approach provides more explicit way of what kind actions are available in application.
 
-* createContext(options) - creates a context with actions and properties injected as part of options
+* createContext(options) - creates a context with actions and properties injected as part of options. It returns a context reference which holds access to all other actions as well as it is actually a Flow object, so one can use a flow pub/sub API.
 
 # Usage
 
-First we would like you to focus more on how you can apply this module to simplify your business logic with the use of Action type, then you will see more generic examples on how generic Flow type can be used and applied to the action type as it extends Flow.
+First we would like you to focus more on how you can apply this module to simplify your business logic with the use of Action type, then you will see Context based examples and then more generic examples on how generic Flow type can be used and applied to the action type as it extends Flow.
 
 ## Action
 
