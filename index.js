@@ -10,6 +10,7 @@ class Flow {
             this.eventContext = baseFlow.eventContext;
             return;
         }
+        // eslint-disable-next-line no-use-before-define
         this.eventContext = new EventContext();
     }
 
@@ -22,13 +23,16 @@ class Flow {
        define(topics[, callback])
        It supports the following calling styles
        - define('topic') defines publisher with the given topic.
-            * If define return non-empty value (promise, eventemitter, object, etc.), it is assumed to be a result that gets published to the flow under the topic name.
+            * If define return non-empty value (promise, eventemitter, object, etc.),
+            it is assumed to be a result that gets published to the flow under the topic name.
        - define(['A', 'B']) defines publisher with the given topics.
        - define('topic', callback) defines a publisher for in-line functions.
-            * If callback is provided, it makes calls callback(publisher, runtime), where runtime is the reference to the flow object to allow further access to the flow inside arrow function
+            * If callback is provided, it makes calls callback(publisher, runtime),
+            where runtime is the reference to the flow object to allow further access to the flow inside arrow function
             * If callback return data, it is assumes to be the result and it gets published under topic.
        - define('topic', data) defines static data that gets published under the given topic immediately.
-            * Notable side-effect: if one calls flow.define('foo', data) multiple time it is eqivaalent to emitting events
+            * Notable side-effect: if one calls flow.define('foo', data) multiple time it is
+            eqivaalent to emitting events
 
        Publisher API:
        - pub(data) publishes data under the assigned topic or publisher topic.
@@ -63,7 +67,7 @@ class Flow {
             throw new Error('Invalid arguments');
         }
         this._catchHandler = err => {
-            this._catchHandler = (err) => {};
+            this._catchHandler = () => {};
             callback(err);
         };
         this.consume('error', this._catchHandler);
@@ -85,16 +89,17 @@ class Flow {
             });
 
             const queueState = `queue state ${JSON.stringify(state.queue)}`;
-            const msg = `Topic/s (${unresolved.join(',')}) timed out, pending topics (${pending.join(',') || 'none'}), ${queueState}`;
+            const msg = `Topic/s (${unresolved.join(',')}) timed out, pending topics (${
+                pending.join(',') || 'none'}), ${queueState}`;
 
             this.define('error',
                 new Error(msg));
         }, ms);
 
         this
-        .consume(topics)
-        .then(() => clearTimeout(timer))
-        .catch(() => clearTimeout(timer));
+            .consume(topics)
+            .then(() => clearTimeout(timer))
+            .catch(() => clearTimeout(timer));
 
         return this;
     }
@@ -112,26 +117,28 @@ class Flow {
         API:
         - consume(topics) returns a map of promises mapped to each topic
         - consume(topic) returns a promise for the given topic
-        - consume(topics, callback(input, runtime)) returns a map of resolved values for the given topics, where runtime is a reference to the flow instance
-        - consume(topic, callback(data, runtime)) returns resolved value for the given topic, where runtime is a reference to the flow instance
+        - consume(topics, callback(input, runtime)) returns a map of resolved
+            values for the given topics, where runtime is a reference to the flow instance
+        - consume(topic, callback(data, runtime)) returns resolved value for the given topic,
+            where runtime is a reference to the flow instance
     */
     consume(topics, cb) {
         if (Array.isArray(topics)) {
             if (cb) {
                 Promise.all(topics.map(topic => this.eventContext.get(topic)))
-                .then(values => {
-                    const ret = {};
-                    values.map((val, index) => {
-                        ret[topics[index]] = val;
+                    .then(values => {
+                        const ret = {};
+                        values.map((val, index) => {
+                            ret[topics[index]] = val;
+                        });
+                        // unlink any error in cb from promise flow to let it fail
+                        setImmediate(() => cb(ret, this));
+                    })
+                    .catch(err => {
+                        if (this._catchHandler) {
+                            return this._catchHandler(err);
+                        }
                     });
-                    // unlink any error in cb from promise flow to let it fail
-                    setImmediate(() => cb(ret, this));
-                })
-                .catch(err => {
-                    if (this._catchHandler) {
-                        return this._catchHandler(err);
-                    }
-                });
                 return this; // for cascading style
             }
 
@@ -141,12 +148,10 @@ class Flow {
             }, []);
 
             return Promise.all(promises)
-            .then(results => {
-                return results.reduce((memo, data, index) => {
+                .then(results => results.reduce((memo, data, index) => {
                     memo[topics[index]] = data;
                     return memo;
-                }, {});
-            });
+                }, {}));
         }
 
         // handle single topics
@@ -173,7 +178,8 @@ class Flow {
     */
     consumeStream(topic, callback) {
         // let's monitor end of stream to show in pending list if timeout happens
-        this.consume(topic + ':end').catch(() => {});
+        this.consume(`${topic }:end`).catch(() => {});
+        // eslint-disable-next-line no-use-before-define
         const stream = new ReadableStream(topic, this.eventContext);
         if (callback) {
             callback(stream);
@@ -250,6 +256,7 @@ class EventContext {
             topics = [].slice.call(arguments);
         }
 
+        // eslint-disable-next-line no-use-before-define
         return new StageContext(this, topics);
     }
 
@@ -353,7 +360,7 @@ class EventContext {
       If value is not yet published, it will return a promise
     */
     get(name) {
-        var value = this._context[name] = this._context[name] || new Promise((resolve, reject) => {
+        const value = this._context[name] = this._context[name] || new Promise((resolve, reject) => {
             // this.once(name, resolve);
             this.once(name, data => {
                 resolve(data);
@@ -389,7 +396,7 @@ class StageContext extends EventContext {
 
 class ReadableStream extends Readable {
     constructor(topic, emitter) {
-        super({objectMode: true});
+        super({ objectMode: true });
         this.topic = topic;
         this.emitter = emitter;
         // then init, this is a first time
@@ -409,7 +416,7 @@ class ReadableStream extends Readable {
 
         this.once('error', err => {
             this._stopped = true;
-            emitter.emit(topic + ':end');
+            emitter.emit(`${topic }:end`);
             emitter.emit('error', err);
         });
         this._buffer = [];
@@ -425,7 +432,7 @@ class ReadableStream extends Readable {
 
     _read() {
         this._paused = false;
-        while(!this._paused && this._buffer.length) {
+        while (!this._paused && this._buffer.length) {
             this._continue(this._buffer.shift());
         }
     }
@@ -434,7 +441,7 @@ class ReadableStream extends Readable {
         if (data === undefined || data === null) {
             data = null; // mark stop down the stream
             this._stopped = true;
-            this.emitter.emit(this.topic + ':end');
+            this.emitter.emit(`${this.topic }:end`);
         }
         this._paused = !this.push(data);
     }
@@ -476,8 +483,10 @@ class Action extends Flow {
             }
         }
 
+        // eslint-disable-next-line no-shadow
         actions.forEach(action => {
             if (typeof action === 'function') {
+                // eslint-disable-next-line no-use-before-define
                 action = new FunctionAction(action);
             }
             Assert.ok(action instanceof Action, 'The action beeing added does not of Action type');

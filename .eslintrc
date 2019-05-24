@@ -8,7 +8,6 @@
       "brace-style": [2, "stroustrup", { "allowSingleLine": true }],
       "no-unused-expressions": 0,
       "no-unused-vars": ["error", { "args": "none" }],
-      "no-shadow": ["warn"],
       "no-param-reassign": ["warn", {"props": false}]
     }
 }

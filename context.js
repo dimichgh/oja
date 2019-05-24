@@ -26,6 +26,7 @@ module.exports = (options = {}) => {
                     return this.functionDomain || this.propDomain;
                 }
             }, {
+                // eslint-disable-next-line no-shadow
                 get(obj, name) {
                     if (obj[name]) {
                         return obj[name];
