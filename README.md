@@ -119,7 +119,7 @@ Actions cannot be added after they have been started.
 
 While pub/sub is based on knowledge of topics consumed and published, context based approach provides more explicit way of what kind actions are available in application.
 
-* createContext(options) - creates a context with actions and properties injected as part of options. It returns a context reference which holds access to all other actions as well as it is actually a Flow object, so one can use a flow pub/sub API.
+* createContext(options) - creates a context with actions and properties injected as part of options. It returns a context reference which holds access to all other actions. It is also a Flow object, so one can use a flow pub/sub API. It is recommended to refrain from creating too many Flow/Actions objects and stick to the use of only one - context Flow object - as it is passed everywhere anyways.
 
 # Usage
 
@@ -182,7 +182,7 @@ helloAction
 
 ## Context Action
 
-### Action definition:
+### Action definition
 
 ```js
 modules.exports = async context => {
@@ -199,8 +199,8 @@ modules.exports = context => (arg1, arg2, ...) => {
 Calling action within other action
 ```js
 modules.exports = context => (keyword, ...) => {
-    // we can all other actions via context
-    // assumin we define actions domain (see bellow for more examples)
+    // we can call other actions via context
+    // assuming we define actions domain (see bellow for more examples)
     const results = await context.actions.find(context.keyword);
     return {
         keyword: context.keyword,
@@ -230,7 +230,7 @@ const createContext = require('oja/context');
 const context = createContext({
     // injecting properteis
     properties: {
-        parameteres: {
+        parameters: {
             foo: 'foov',
             bar: 'barv
         }
