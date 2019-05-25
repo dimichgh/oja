@@ -39,9 +39,12 @@ module.exports = (options = {}) => {
                     return obj.propDomain[name];
 
                     function create() {
-                        const act = functions[domainName][name];
+                        let act = functions[domainName][name];
                         if (act instanceof Function) {
-                            return act(proxy);
+                            act = act(proxy);
+                            if (act instanceof Function) {
+                                return act;
+                            }
                         }
                         if (act instanceof Error) {
                             return () => {

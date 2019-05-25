@@ -119,4 +119,64 @@ describe(__filename, () => {
         Assert.ok(ctx.properties);
         Assert.equal(undefined, ctx.actions.bad);
     });
+
+    it('should allow to form action chains', async () => {
+        const ctx = createContext({
+            functions: {
+                actions: {
+                    calc: context => param1 => {
+                        return context.actions.mutate(param1);
+                    },
+                    mutate: context => async param1 => {
+                        const val = await context.actions.three();
+                        return param1 + val;
+                    },
+                    three: context => 3
+                }
+            }
+        });
+
+        Assert.equal(5, await ctx.actions.calc(2));
+    });
+
+    it('should allow to form action chains. mock one action', async () => {
+        const ctx = createContext({
+            functions: {
+                actions: {
+                    calc: context => param1 => {
+                        return context.actions.mutate(param1);
+                    },
+                    mutate: context => async param1 => {
+                        const val = await context.actions.three();
+                        return param1 + val;
+                    },
+                    three: 3
+                }
+            }
+        });
+
+        Assert.equal(5, await ctx.actions.calc(2));
+    });
+
+    it('should define and consume topic in one of the actions', async () => {
+        const ctx = createContext({
+            functions: {
+                actions: {
+                    calc: context => async () => {
+                        const param1 = await context.consume('param1');
+                        context.actions.mutate(param1);
+                        return context.consume('result');
+                    },
+                    mutate: context => async param1 => {
+                        const val = await context.actions.three();
+                        context.define('result', param1 + val);
+                    },
+                    three: context => 3
+                }
+            }
+        });
+
+        ctx.define('param1', 2);
+        Assert.equal(5, await ctx.actions.calc());
+    });
 });
