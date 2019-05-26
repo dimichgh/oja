@@ -41,7 +41,7 @@ It accumulates events in the backlog for new subscribers. This has pros and cons
 
 ## Context/business actions
 
-The module provides a way to slice the code into isolated, small and independent actions that can later be used to compose much more complex applications via context object.
+The module provides a way to slice the code into isolated, small and independent actions that can later be used to compose much more complex applications with dependency injection via context object.
 
 ![context diagram](./docs/images/context.png)
 
@@ -117,9 +117,9 @@ Actions cannot be added after they have been started.
 
 ## Context API
 
-While pub/sub is based on knowledge of topics consumed and published, context based approach provides more explicit way of what kind actions are available in application.
+While pub/sub is based on knowledge of topics consumed and published, context based approach provides a more explicit way of what kind actions are available in application.
 
-* createContext(options) - creates a context with actions and properties injected as part of options. It returns a context reference which holds access to all other actions. It is also a Flow object, so one can use a flow pub/sub API. It is recommended to refrain from creating too many Flow/Actions objects and stick to the use of only one - context Flow object - as it is passed everywhere anyways.
+* createContext(options) - creates a context with actions and properties injected as part of options. It returns a context reference; which provides access to all other actions. It is also a Flow object, so one can mix flow with context. It is recommended to refrain from creating too many Flow/Actions objects and stick to the use of only one - context object - as it is passed everywhere anyways.
 
 # Usage
 
@@ -249,14 +249,12 @@ const context = createContext({
 });
 
 // use it
-
 console.log(context.foo); // >> foov
 console.log(context.bar); // >> barv
 
 // call action
 const actionResult1 = await context.domainName1.actionName1();
 const actionResult3 = await context.domainName2.actionName3();
-
 ```
 
 Context extends Flow API, hence it allows to mix pub/sub with context based approach
@@ -274,7 +272,6 @@ modules.exports = async context => {
         searchResults
     };
 };
-
 ```
 
 ## Flow
@@ -284,6 +281,7 @@ The usage examples are generic and look more like generic event pub/sub mode.
 It can be used to create more specific controls like Action mentioned above.
 
 ### Simple pub/sub
+
 ```js
 const Flow = require('oja').Flow;
 const flow = new Flow();
