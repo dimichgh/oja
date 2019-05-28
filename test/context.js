@@ -60,32 +60,6 @@ describe(__filename, () => {
         }, /BOOM/);
     });
 
-    it('should allow inspect context', async () => {
-        const ctx = createContext({
-            properties: {
-                account: {
-                    foo: 'foov',
-                    bar: 'barv'
-                }
-            },
-            functions: {
-                actions: {
-                    qaz: 'qazv',
-                    wsx: 'wsxv'
-                }
-            }
-        });
-        Assert.deepEqual({ foo: 'foov', bar: 'barv' }, ctx.account.toJSON());
-        Assert.equal('{"foo":"foov","bar":"barv"}', JSON.stringify(ctx.account));
-        Assert.equal('{ foo: \'foov\', bar: \'barv\' }', require('util').inspect(ctx.account));
-
-        Assert.deepEqual({}, ctx.actions.toJSON());
-        Assert.equal('{}', require('util').inspect(ctx.actions));
-        ctx.actions.qaz();
-        ctx.actions.wsx();
-        Assert.equal('{ qaz: [Function], wsx: [Function] }', require('util').inspect(ctx.actions));
-    });
-
     it('should allow properties with their own ref', async () => {
         const domain = {
             foo() {
@@ -104,20 +78,6 @@ describe(__filename, () => {
         Assert.equal('barv', ctx.domain.foo());
         Assert.equal('barv', domain.bar());
         // Assert.equal('', ctx.actions.foo());
-    });
-
-    it('should handle negative test cases', async () => {
-        let ctx = createContext();
-
-        Assert.equal(undefined, ctx.bad.foo);
-
-        ctx = createContext({
-            functions: {},
-            properties: {}
-        });
-
-        Assert.ok(ctx.properties);
-        Assert.equal(undefined, ctx.actions.bad);
     });
 
     it('should allow to form action chains', async () => {

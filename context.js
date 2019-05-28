@@ -1,4 +1,4 @@
-const util = require('util');
+'use strict';
 
 const Flow = require('.').Flow;
 
@@ -8,56 +8,44 @@ const Flow = require('.').Flow;
  * which is function factory with injected context that will be created by
  * runtime and passed to every factory function before execution of the returned function instance
  */
-module.exports = (options = {}) => {
-    const { functions = {}, properties = {} } = options;
-    // create access route as context.functionGroup.action(request) => response
-    const proxy = new Proxy(new Flow(), {
-        get(obj, domainName) {
-            // use action domain as an indication of action context injected or
-            // not if missing in actionDomain while present in functions
-            // in this case we will run action factory
-            const ret = obj[domainName] = obj[domainName] || new Proxy({
-                functionDomain: (functions[domainName] ? {} : undefined),
-                propDomain: properties[domainName] || {},
-                [util.inspect.custom]() {
-                    return this.functionDomain || this.propDomain;
-                },
-                toJSON() {
-                    return this.functionDomain || this.propDomain;
-                }
-            }, {
-                // eslint-disable-next-line no-shadow
-                get(obj, name) {
-                    if (obj[name]) {
-                        return obj[name];
-                    }
-                    if (obj.functionDomain) {
-                        const value = obj.functionDomain[name] = obj.functionDomain[name] || create();
-                        return value;
-                    }
-
-                    return obj.propDomain[name];
-
-                    function create() {
-                        let act = functions[domainName][name];
-                        if (act instanceof Function) {
-                            act = act(proxy);
-                            if (act instanceof Function) {
-                                return act;
-                            }
-                        }
-                        if (act instanceof Error) {
-                            return () => {
-                                throw act;
-                            };
-                        }
-                        return () => act;
-                    }
-                }
+class Context extends Flow {
+    constructor({ functions = {}, properties = {} }) {
+        super();
+        Object.assign(this, properties);
+        Object.keys(functions).forEach(domainName => {
+            const domainFunctions = functions[domainName];
+            this[domainName] = {};
+            Object.keys(domainFunctions).forEach(name => {
+                const act = domainFunctions[name];
+                this.create(domainName, name, act);
             });
-            return ret;
-        }
-    });
+        });
+    }
 
-    return proxy;
-};
+    create(domainName, name, act) {
+        let resolvedAct;
+        const resolveAct = () => {
+            if (act instanceof Function) {
+                act = act(this);
+                if (act instanceof Function) {
+                    return act;
+                }
+            }
+            if (act instanceof Error) {
+                return () => {
+                    throw act;
+                };
+            }
+            return () => act;
+        };
+
+        Object.defineProperty(this[domainName], name, {
+            get() {
+                resolvedAct = resolvedAct !== undefined ? resolvedAct : resolveAct();
+                return resolvedAct;
+            }
+        });
+    }
+}
+
+module.exports = (options = {}) => new Context(options);
