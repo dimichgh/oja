@@ -1,19 +1,4 @@
-node_modules
-# Eclipse configuration #
-.settings
-.classpath
-.buildpath
-*.log
-target
-.target
-pids
-.idea
-log
-.beans
-.cache
-*.marko.js
-*.dust.js
-project.sublime-workspace
-test/static
 coverage/*
 yarn.lock
+package-lock.json
+node_modules

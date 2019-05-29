@@ -1,12 +1,8 @@
-.jshintrc
-Makefile
-.jshintignore
-doc
+.eslintrc
+.eslintignore
+.gitignore
+docs
 test
-examples
-.atom-build.json
-tracking-context-request.md
-.beans
-.cache
 .git
 yarn.lock
+package-lock.json

@@ -10,20 +10,25 @@ Lightweight pub/sub module with event backlog, timeout support that maps events 
 [![Known Vulnerabilities](https://snyk.io/test/github/dimichgh/oja/badge.svg)](https://snyk.io/test/github/dimichgh/oja)
 [![Greenkeeper badge](https://badges.greenkeeper.io/dimichgh/oja.svg)](https://greenkeeper.io/)
 
-### Idea
+# Idea
 
-The main reason for creation of this module is to allow decoupling business logic into smaller isolated stage components in the application via pub/sub API that leads to a simpler/isolated unit testing with easy mocking of input data and easy composition of components into higher async structures.
+The main reason for creation of this module is to allow decoupling business logic into smaller isolated standalone components in the application via pub/sub API and/or common context that leads to a simpler/isolated unit testing with easy mocking of input data and easy composition of components into higher async structures.
 
-### Architecture
+The context based approach allows a developer to slice the business logic into small, isolated busness actions that communicate to each other via context and that encourages developers to use the same action interface across application code, which makes the code more predictable, easy to define and test with mock data and yes, boring.
 
-The module is based on pub/sub interface.
-It accumulates events in the backlog for new subscribers. This is pros and cons:
+# Architecture
+
+## Pub/sub flow
+
+This approach is based on pub/sub interface.
+It accumulates events in the backlog for new subscribers. This has pros and cons:
 
 * Allows consumers/producers to be added in any order and guarantees delivery of an event.
 * Accumulates events in memory, thus it cannot be used for long running flows as it eventually will run out of memory.
-* It is good fit for short request/stream flows that eventually end and GC-ed.
+* It is good fit for short request/stream flows that eventually complete and garbage collected.
 
 ### Features:
+
 * Queuing events for later consuption. For example, if sonsumer added after the event happened, it would still receive it.
 * Consume events as stream/promises.
 * Consume stream as events/promises
@@ -34,15 +39,21 @@ It accumulates events in the backlog for new subscribers. This is pros and cons:
 * Compose/link flows into one.
 * Debug/listen to all events going on in the flow.
 
-### Install
+## Context/business actions
+
+The module provides a way to slice the code into isolated, small and independent actions that can later be used to compose much more complex applications with dependency injection via context object.
+
+![context diagram](./docs/images/context.png)
+
+# Install
 
 ```
 npm install oja -S
 ```
 
-### API
+# API
 
-#### Flow API
+## Flow API
 
 The flow is generic definition of the control flow.
 
@@ -87,7 +98,7 @@ The flow is generic definition of the control flow.
         * *data* will be immediately published under the given topics into the flow; in case error object is passed, the flow will be stopped and 'error' event will be broadcasted into the flow.
         * *promise* will publish data once resolved; in case of reject the flow will be stopped and 'error' generated.
 
-#### Action API
+## Action API
 
 Action type is more specific to business unit that extends Flow further to allow defining executable independent business logic blocks called actions.
 
@@ -104,20 +115,26 @@ Actions cannot be added after they have been started.
 * **execute**() is a method called by framework during activation; the action logic should be put into this method
 * **activate**() starts the action and all its children. This method better not be overridden or one needs to make sure a base function called.
 
-### Usage
+## Context API
 
-First we would like you to focus more on how you can apply this module to simplify your business logic with the use of Action type, then you will see more generic examples on how generic Flow type can be used and applied to the action type as it extends Flow.
+While pub/sub is based on knowledge of topics consumed and published, context based approach provides a more explicit way of what kind actions are available in application.
 
-#### Action
+* createContext(options) - creates a context with actions and properties injected as part of options. It returns a context reference; which provides access to all other actions. It is also a Flow object, so one can mix flow with context. It is recommended to refrain from creating too many Flow/Actions objects and stick to the use of only one - context object - as it is passed everywhere anyways.
 
-##### Execute an action
+# Usage
+
+First we would like you to focus more on how you can apply this module to simplify your business logic with the use of Action type, then you will see Context based examples and then more generic examples on how generic Flow type can be used and applied to the action type as it extends Flow.
+
+## Action
+
+### Execute an action
 
 ```js
 const Action = require('oja').Action;
 new Action().activate();
 ```
 
-##### Execute an action that generates an event
+### Execute an action that generates an event
 
 ```js
 const Action = require('oja').Action;
@@ -131,7 +148,7 @@ new MyAction()
     .consume('foo', data => console.log(data)); // will print bar
 ```
 
-##### Composing more complex actions out of basic ones
+### Composing more complex actions out of basic ones
 
 ```js
 const Action = require('oja').Action;
@@ -163,13 +180,108 @@ helloAction
     .consume('greeting', console.log); // prints Hello World
 ```
 
-#### Flow
+## Context Action
+
+### Action definition
+
+```js
+modules.exports = async context => {
+    // action logic here
+};
+?/ or with parameters separation
+modules.exports = context => (arg1, arg2, ...) => {
+    // action logic here
+};
+```
+
+### Action usage
+
+Calling action within other action
+```js
+modules.exports = context => (keyword, ...) => {
+    // we can call other actions via context
+    // assuming we define actions domain (see bellow for more examples)
+    const results = await context.actions.find(context.keyword);
+    return {
+        keyword: context.keyword,
+        searchResults; results
+    }
+};
+```
+
+Calling the above action, assuming it is called search under domain 'actions'
+```js
+modules.exports = async context => {
+    const searchResults = await context.actions.search('foo'); // passing some parameters
+};
+```
+
+### Context creation
+
+There are two main components:
+
+* properties are translated into `context.<property name>` access pattern
+* functions are translated into `context.<domain>.<action name>`
+
+```js
+const createContext = require('oja/context');
+
+// inject/configure context
+const context = createContext({
+    // injecting properteis
+    properties: {
+        parameters: {
+            foo: 'foov',
+            bar: 'barv
+        }
+    },
+    // injection actions
+    functions: {
+        domainName1: {
+            actionName1: context => {}
+            actionName2: context => {}
+        },
+        domainName2: {
+            actionName3: context => {}
+            actionName4: context => {}
+        }
+    }
+});
+
+// use it
+console.log(context.foo); // >> foov
+console.log(context.bar); // >> barv
+
+// call action
+const actionResult1 = await context.domainName1.actionName1();
+const actionResult3 = await context.domainName2.actionName3();
+```
+
+Context extends Flow API, hence it allows to mix pub/sub with context based approach
+
+```js
+modules.exports = async context => {
+    const searchResults = await context.actions.search('foo'); // passing some parameters
+    // publish it
+    context.define('searchResults', searchResults);
+};
+// consume it in some other action
+modules.exports = async context => {
+    const searchResults = await context.consume('searchResults');
+    return {
+        searchResults
+    };
+};
+```
+
+## Flow
 
 The usage examples are generic and look more like generic event pub/sub mode.
 
 It can be used to create more specific controls like Action mentioned above.
 
-##### Simple pub/sub
+### Simple pub/sub
+
 ```js
 const Flow = require('oja').Flow;
 const flow = new Flow();
@@ -186,7 +298,7 @@ const producer = flow.define('foo');
 producer.pub('bar');
 ```
 
-##### Shorter form for clarity:
+### Shorter form for clarity:
 
 ```js
 // create consumer component
@@ -197,7 +309,7 @@ flow
 .define('foo', 'bar');
 ```
 
-##### Consuming multiple events for the given topic
+### Consuming multiple events for the given topic
 
 ```js
 // create consumer component
@@ -210,7 +322,7 @@ flow
 .define('foo', 'bar2');
 ```
 
-##### Consuming events as a stream
+### Consuming events as a stream
 
 ```js
 const buffer = [];
@@ -227,7 +339,7 @@ flow.define('foo', 'three');
 flow.define('foo', null);
 ```
 
-##### Consuming events via reader
+### Consuming events via reader
 
 ```js
 const Flow = require('.').Flow;
@@ -254,7 +366,7 @@ async function read() {
 read();
 ```
 
-##### Consuming multiple topics in one short
+### Consuming multiple topics in one short
 
 ```js
 // consume multiple topics
@@ -266,7 +378,7 @@ flow.define('foo', 'faa');
 flow.define('qoo', 'qaa');
 ```
 
-##### Using promise
+### Using promise
 
 ```js
 // create consumer component
@@ -279,7 +391,7 @@ flow
 }));
 ```
 
-##### Multiple consumers, single producer
+### Multiple consumers, single producer
 
 ```js
 // create consumer component
@@ -293,7 +405,7 @@ flow
 .define('foo', 'bar');
 ```
 
-##### Chaining actions, mixing, etc.
+### Chaining actions, mixing, etc.
 
 ```js
 // NOTE: the order of consume/define does not matter
@@ -366,7 +478,7 @@ flow.consume('*', evt => {
 })
 ```
 
-##### Join flows together
+### Join flows together
 
 ```js
 const base = new Flow();
@@ -391,7 +503,7 @@ flow.consume('foo', foo => {
 flow.define('shared', ''); // trigger the chain
 ```
 
-##### Timeouts
+### Timeouts
 
 The promise chain may be hard to figure out where it is blocked.
 Oja allows to set a timeout for the given topics and upon the timeout would provide an error message listing topics that have not been resolved yet.
@@ -408,7 +520,7 @@ flow
 });
 ```
 
-##### Querying for the state
+### Querying for the state
 
 Oja provides a current status of topcis that have not been resolved
 
@@ -422,9 +534,9 @@ flow
 console.log(flow.state()); // prints [foo, too]
 ```
 
-##### Error
+### Error
 
-###### Throwing error
+#### Throwing error
 
 ```js
 flow.define('error', new Error('Boom'));
@@ -440,7 +552,7 @@ flow.define('data', runtime => {
 });
 ```
 
-###### Catching error
+#### Catching error
 
 ```js
 flow.catch(err => {
@@ -452,7 +564,7 @@ flow.consume('error', err => {
 });
 ```
 
-###### Error stops flow
+#### Error stops flow
 
 The error will prevent further events including error events from publishing.
 
@@ -477,7 +589,7 @@ flow
 });
 ```
 
-###### Composing complex flows
+#### Composing complex flows
 
 ```js
 const base = new Flow();
