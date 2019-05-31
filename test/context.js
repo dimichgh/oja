@@ -58,6 +58,8 @@ describe(__filename, () => {
         Assert.throws(() => {
             ctx.actions.fail();
         }, /BOOM/);
+
+        Object.getOwnPropertyNames(ctx.actions).forEach(name => Assert.ok(ctx.actions.propertyIsEnumerable(name)));
     });
 
     it('should allow properties with their own ref', async () => {

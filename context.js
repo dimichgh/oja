@@ -43,7 +43,8 @@ class Context extends Flow {
             get() {
                 resolvedAct = resolvedAct !== undefined ? resolvedAct : resolveAct();
                 return resolvedAct;
-            }
+            },
+            enumerable: true
         });
     }
 }
