@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.2.1
+* Made context action enumerable
+
 ## v1.2.0
 * Added context based approach.
 
