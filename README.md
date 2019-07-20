@@ -29,7 +29,7 @@ It accumulates events in the backlog for new subscribers. This has pros and cons
 
 ### Features:
 
-* Queuing events for later consuption. For example, if sonsumer added after the event happened, it would still receive it.
+* Queuing events for later consuption. For example, if consumer added after the event happened, it would still receive it.
 * Consume events as stream/promises.
 * Consume stream as events/promises
 * Consume promises as stream/events
