@@ -18,6 +18,12 @@ The context based approach allows a developer to slice the business logic into s
 
 # Architecture
 
+## Dependency injection flow
+
+The module provides a way to slice the code into isolated, small and independent actions that can later be used to compose much more complex applications with dependency injection via context object.
+
+![context diagram](./docs/images/context.png)
+
 ## Pub/sub flow
 
 This approach is based on pub/sub interface.
@@ -39,12 +45,6 @@ It accumulates events in the backlog for new subscribers. This has pros and cons
 * Compose/link flows into one.
 * Debug/listen to all events going on in the flow.
 
-## Context/business actions
-
-The module provides a way to slice the code into isolated, small and independent actions that can later be used to compose much more complex applications with dependency injection via context object.
-
-![context diagram](./docs/images/context.png)
-
 # Install
 
 ```
@@ -52,6 +52,12 @@ npm install oja -S
 ```
 
 # API
+
+## Context API
+
+While pub/sub is based on knowledge of topics consumed and published, context based approach provides a more explicit way of what kind actions are available in application.
+
+* createContext(options) - creates a context with actions and properties injected as part of options. It returns a context reference; which provides access to all other actions. It is also a Flow object, so one can mix flow with context. It is recommended to refrain from creating too many Flow/Actions objects and stick to the use of only one - context object - as it is passed everywhere anyways.
 
 ## Flow API
 
@@ -114,12 +120,6 @@ Actions cannot be added after they have been started.
     * action can be a single action or an array of actions. Action parameter can also be a generic function that accepts flow reference:
 * **execute**() is a method called by framework during activation; the action logic should be put into this method
 * **activate**() starts the action and all its children. This method better not be overridden or one needs to make sure a base function called.
-
-## Context API
-
-While pub/sub is based on knowledge of topics consumed and published, context based approach provides a more explicit way of what kind actions are available in application.
-
-* createContext(options) - creates a context with actions and properties injected as part of options. It returns a context reference; which provides access to all other actions. It is also a Flow object, so one can mix flow with context. It is recommended to refrain from creating too many Flow/Actions objects and stick to the use of only one - context object - as it is passed everywhere anyways.
 
 # Usage
 
@@ -235,7 +235,7 @@ const context = createContext({
             bar: 'barv
         }
     },
-    // injection actions
+    // injecting actions
     functions: {
         domainName1: {
             actionName1: context => {}
