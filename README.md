@@ -1,5 +1,5 @@
 <p align="center">
-    <img src="https://github.com/trooba/branding/raw/master/images/oja.png" alt="Oja logo" width="200" /><br /><br />
+    <h1><a href="https://github.com/eBay/oja/blob/master/packages/oja-flow#readme">Oja</a> has been moved under <a href="https://github.com/eBay/oja">eBay repo</a> with lots of <a href="https://github.com/eBay/oja#documentation-and-packages">new features</a></h1>
 </p>
 
 Lightweight dependency injection module with pub/sub event backlog, timeout support that maps events to promises and back as well as chains them to other topics. Use it to structure application business logic.
